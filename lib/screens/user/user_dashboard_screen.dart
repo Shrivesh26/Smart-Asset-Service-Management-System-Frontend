@@ -59,6 +59,19 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
   Color get _txtS =>
       _isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary;
 
+  // ── Responsive helpers ─────────────────────────────────────────────────
+  double get _screenWidth => MediaQuery.of(context).size.width;
+  double get _screenHeight => MediaQuery.of(context).size.height;
+  bool get _isTablet => _screenWidth >= 600;
+  bool get _isLargeTablet => _screenWidth >= 840;
+  double get _horizontalPadding => _isTablet ? 28.0 : 18.0;
+  double get _cardRadius => _isTablet ? 24.0 : 20.0;
+  int get _categoryGridCount => _isLargeTablet ? 4 : (_isTablet ? 3 : 3);
+  double get _categoryAspectRatio => _isTablet ? 1.0 : 0.9;
+  double get _featuredCardWidth => _isTablet ? 240.0 : 200.0;
+  double get _featuredCardHeight => _isTablet ? 160.0 : 140.0;
+  double get _headerExpandedHeight => _isTablet ? 190.0 : 160.0;
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthService>();
@@ -75,7 +88,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
           slivers: [
             // ── Collapsible header ─────────────────────────────────────
             SliverAppBar(
-              expandedHeight: 160,
+              expandedHeight: _headerExpandedHeight,
               pinned: true,
               stretch: true,
               backgroundColor: AppTheme.userDark,
@@ -95,55 +108,102 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
               child: FadeTransition(
                 opacity: _fadeAnim,
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ── Quick stats ─────────────────────────────────
-                      _buildQuickStats(bookingSvc),
-                      const SizedBox(height: 26),
-
-                      // ── Featured carousel ───────────────────────────
-                      _sectionHeader('Featured Services', () {
-                        context.go(AppRoutes.userMarketplace);
-                      }),
-                      const SizedBox(height: 12),
-                      _buildFeaturedCarousel(serviceSvc.services),
-                      const SizedBox(height: 26),
-
-                      // ── Categories ──────────────────────────────────
-                      _sectionHeader('Browse Categories', () {
-                        context.go(AppRoutes.userMarketplace);
-                      }),
-                      const SizedBox(height: 12),
-                      _buildCategoryGrid(serviceSvc.categories),
-                      const SizedBox(height: 26),
-
-                      // ── Recent bookings ─────────────────────────────
-                      _sectionHeader('Recent Bookings', () {
-                        context.go(AppRoutes.userOrderHistory);
-                      }),
-                      const SizedBox(height: 12),
-
-                      if (bookingSvc.isLoading)
-                        _shimmerBookings()
-                      else if (bookingSvc.bookings.isEmpty)
-                        _emptyBookings()
-                      else
-                        ...bookingSvc.bookings
-                            .take(3)
-                            .map((b) => _buildBookingCard(b)),
-
-                      const SizedBox(height: 80),
-                    ],
+                  padding: EdgeInsets.symmetric(
+                    horizontal: _horizontalPadding,
+                    vertical: 20,
                   ),
+                  child: _isLargeTablet
+                      ? _buildWideLayout(bookingSvc, serviceSvc)
+                      : _buildNarrowLayout(bookingSvc, serviceSvc),
                 ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  // ── Narrow layout (phone + small tablet) ──────────────────────────────
+  Widget _buildNarrowLayout(
+      BookingService bookingSvc, ServiceCatalogService serviceSvc) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildQuickStats(bookingSvc),
+        const SizedBox(height: 26),
+        _sectionHeader('Featured Services', () {
+          context.go(AppRoutes.userMarketplace);
+        }),
+        const SizedBox(height: 12),
+        _buildFeaturedCarousel(serviceSvc.services),
+        const SizedBox(height: 26),
+        _sectionHeader('Browse Categories', () {
+          context.go(AppRoutes.userMarketplace);
+        }),
+        const SizedBox(height: 12),
+        _buildCategoryGrid(serviceSvc.categories),
+        const SizedBox(height: 26),
+        _sectionHeader('Recent Bookings', () {
+          context.go(AppRoutes.userOrderHistory);
+        }),
+        const SizedBox(height: 12),
+        _buildBookingsList(bookingSvc),
+        const SizedBox(height: 80),
+      ],
+    );
+  }
+
+  // ── Wide layout (large tablet / desktop) ──────────────────────────────
+  Widget _buildWideLayout(
+      BookingService bookingSvc, ServiceCatalogService serviceSvc) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildQuickStats(bookingSvc),
+        const SizedBox(height: 26),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Left column — categories + bookings
+            Expanded(
+              flex: 5,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _sectionHeader('Featured Services', () {
+                    context.go(AppRoutes.userMarketplace);
+                  }),
+                  const SizedBox(height: 12),
+                  _buildFeaturedCarousel(serviceSvc.services),
+                  const SizedBox(height: 26),
+                  _sectionHeader('Browse Categories', () {
+                    context.go(AppRoutes.userMarketplace);
+                  }),
+                  const SizedBox(height: 12),
+                  _buildCategoryGrid(serviceSvc.categories),
+                ],
+              ),
+            ),
+            const SizedBox(width: 24),
+            // Right column — recent bookings
+            Expanded(
+              flex: 4,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _sectionHeader('Recent Bookings', () {
+                    context.go(AppRoutes.userOrderHistory);
+                  }),
+                  const SizedBox(height: 12),
+                  _buildBookingsList(bookingSvc),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 80),
+      ],
     );
   }
 
@@ -188,7 +248,12 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
           ),
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(30, 10, 100, 20),
+              padding: EdgeInsets.fromLTRB(
+                _isTablet ? 40 : 30,
+                10,
+                100,
+                20,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -197,21 +262,20 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                   Text(
                     'Good ${_greeting()}',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: _isTablet ? 16 : 14,
                       color: Colors.white.withOpacity(0.78),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '${user?.fullName?.split(' ').first ?? 'User'} 👋',
-                    style: const TextStyle(
-                      fontSize: 26,
+                    style: TextStyle(
+                      fontSize: _isTablet ? 30 : 26,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
                       letterSpacing: -0.5,
                     ),
                   ),
-                  // const SizedBox(height: 18),
                 ],
               ),
             ),
@@ -267,11 +331,14 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
             backgroundImage:
                 (url != null && url.isNotEmpty) ? NetworkImage(url) : null,
             child: (url == null || url.isEmpty)
-                ? Text(user?.initials ?? 'U',
+                ? Text(
+                    user?.initials ?? 'U',
                     style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white))
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  )
                 : null,
           ),
         ),
@@ -280,6 +347,9 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
   }
 
   // ── Quick stats ────────────────────────────────────────────────────────
+  // FIX: Removed incorrect `Positioned` wrapper — it is only valid inside a
+  //      Stack. Using it inside a Container caused a RenderObject exception
+  //      that prevented the entire dashboard from rendering.
   Widget _buildQuickStats(BookingService svc) {
     final active =
         svc.bookings.where((b) => !b.isCancelled && !b.isCompleted).length;
@@ -287,10 +357,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     final total = svc.bookings.length;
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(_isTablet ? 22 : 18),
       decoration: BoxDecoration(
         color: _card,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(_cardRadius),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(_isDark ? 0.2 : 0.05),
@@ -299,7 +369,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
           )
         ],
       ),
-      child: Positioned (
+      // ✅ FIXED: was `Positioned(child: Row(...))` — Positioned must live
+      //           inside a Stack; using it here crashed the widget tree.
       child: Row(
         children: [
           _statItem('Total', '$total', Icons.receipt_long_outlined,
@@ -312,62 +383,76 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
               AppTheme.statusCompleted),
         ],
       ),
-    ));
+    );
   }
 
   Widget _statItem(String label, String value, IconData icon, Color color) {
+    final iconSize = _isTablet ? 44.0 : 40.0;
+    final iconBoxRadius = _isTablet ? 14.0 : 12.0;
+
     return Expanded(
       child: Column(children: [
         Container(
-          width: 40,
-          height: 40,
+          width: iconSize,
+          height: iconSize,
           decoration: BoxDecoration(
             color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(iconBoxRadius),
           ),
-          child: Icon(icon, color: color, size: 20),
+          child: Icon(icon, color: color, size: _isTablet ? 22 : 20),
         ),
         const SizedBox(height: 8),
-        Text(value,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: _txtP,
-            )),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: _isTablet ? 24 : 20,
+            fontWeight: FontWeight.w800,
+            color: _txtP,
+          ),
+        ),
         const SizedBox(height: 2),
-        Text(label,
-            style: TextStyle(
-              fontSize: 11,
-              color: _txtS,
-            )),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: _isTablet ? 12 : 11,
+            color: _txtS,
+          ),
+        ),
       ]),
     );
   }
 
   Widget _statDivider() => Container(
-      width: 1, height: 50, color: _isDark ? AppTheme.darkDivider : AppTheme.dividerColor);
+        width: 1,
+        height: 50,
+        color: _isDark ? AppTheme.darkDivider : AppTheme.dividerColor,
+      );
 
   // ── Section header ─────────────────────────────────────────────────────
   Widget _sectionHeader(String title, VoidCallback onSeeAll) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title,
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: _txtP,
-              letterSpacing: -0.2,
-            )),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: _isTablet ? 19 : 17,
+            fontWeight: FontWeight.w700,
+            color: _txtP,
+            letterSpacing: -0.2,
+          ),
+        ),
         GestureDetector(
           onTap: onSeeAll,
           child: Row(children: [
-            Text('See all',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.userPrimary,
-                )),
+            Text(
+              'See all',
+              style: TextStyle(
+                fontSize: _isTablet ? 14 : 13,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.userPrimary,
+              ),
+            ),
             const SizedBox(width: 2),
             Icon(Icons.arrow_forward_ios_rounded,
                 size: 12, color: AppTheme.userPrimary),
@@ -381,7 +466,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
   Widget _buildFeaturedCarousel(List<ServiceModel> services) {
     if (services.isEmpty) {
       return Container(
-        height: 130,
+        height: _featuredCardHeight,
         decoration: BoxDecoration(
           color: _card,
           borderRadius: BorderRadius.circular(16),
@@ -403,7 +488,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     ];
 
     return SizedBox(
-      height: 140,
+      height: _featuredCardHeight,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: featured.length,
@@ -415,7 +500,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
             onTap: () => context.go(
                 '${AppRoutes.bookService}?serviceId=${s.id}&storeId=${s.tenantId}'),
             child: Container(
-              width: 200,
+              width: _featuredCardWidth,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -443,37 +528,46 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                         color: Colors.white.withOpacity(0.18),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text('Featured',
-                          style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600)),
+                      child: const Text(
+                        'Featured',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ]),
                   const Spacer(),
-                  Text(s.name,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
+                  Text(
+                    s.name,
+                    style: TextStyle(
+                      fontSize: _isTablet ? 16 : 15,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 5),
                   Row(children: [
                     const Icon(Icons.access_time_rounded,
                         color: Colors.white70, size: 12),
                     const SizedBox(width: 4),
-                    Text(s.durationDisplay,
-                        style: const TextStyle(
-                            fontSize: 11, color: Colors.white70)),
+                    Text(
+                      s.durationDisplay,
+                      style:
+                          const TextStyle(fontSize: 11, color: Colors.white70),
+                    ),
                     const Spacer(),
-                    Text(s.priceDisplay,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        )),
+                    Text(
+                      s.priceDisplay,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
                   ]),
                 ],
               ),
@@ -501,8 +595,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
           const Color(0xFFB45309), 'Auto'),
       'home_services': _CatMeta(Icons.home_repair_service_outlined,
           AppTheme.userPrimary, 'Home'),
-      'cleaning': _CatMeta(
-          Icons.cleaning_services_outlined, const Color(0xFF0891B2), 'Cleaning'),
+      'cleaning': _CatMeta(Icons.cleaning_services_outlined,
+          const Color(0xFF0891B2), 'Cleaning'),
     };
 
     final displayed = categories.isEmpty
@@ -512,11 +606,11 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: _categoryGridCount,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 0.9,
+        childAspectRatio: _categoryAspectRatio,
       ),
       itemCount: displayed.length,
       itemBuilder: (_, i) {
@@ -543,20 +637,21 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 50,
-                  height: 50,
+                  width: _isTablet ? 56 : 50,
+                  height: _isTablet ? 56 : 50,
                   decoration: BoxDecoration(
                     color: meta.color.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(meta.icon, color: meta.color, size: 26),
+                  child: Icon(meta.icon, color: meta.color,
+                      size: _isTablet ? 28 : 26),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   meta.label,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: _isTablet ? 12 : 11,
                     fontWeight: FontWeight.w600,
                     color: _txtP,
                   ),
@@ -569,19 +664,31 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     );
   }
 
+  // ── Bookings list (extracted for reuse in wide layout) ─────────────────
+  Widget _buildBookingsList(BookingService bookingSvc) {
+    if (bookingSvc.isLoading) return _shimmerBookings();
+    if (bookingSvc.bookings.isEmpty) return _emptyBookings();
+    return Column(
+      children: bookingSvc.bookings
+          .take(3)
+          .map((b) => _buildBookingCard(b))
+          .toList(),
+    );
+  }
+
   // ── Booking card ───────────────────────────────────────────────────────
   Widget _buildBookingCard(BookingModel b) {
     final displayStatus = b.userFacingStatusLabel;
 
     return GestureDetector(
-      onTap: () => context.go(
-          AppRoutes.userOrderStatus.replaceAll(':orderId', b.id)),
+      onTap: () => context
+          .go(AppRoutes.userOrderStatus.replaceAll(':orderId', b.id)),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(_isTablet ? 18 : 16),
         decoration: BoxDecoration(
           color: _card,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(_cardRadius),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(_isDark ? 0.2 : 0.05),
@@ -592,8 +699,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
         ),
         child: Row(children: [
           Container(
-            width: 48,
-            height: 48,
+            width: _isTablet ? 54 : 48,
+            height: _isTablet ? 54 : 48,
             decoration: BoxDecoration(
               color: AppTheme.getStatusBgColor(displayStatus),
               borderRadius: BorderRadius.circular(14),
@@ -601,7 +708,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
             child: Icon(
               Icons.home_repair_service_outlined,
               color: AppTheme.getStatusColor(displayStatus),
-              size: 22,
+              size: _isTablet ? 26 : 22,
             ),
           ),
           const SizedBox(width: 14),
@@ -609,12 +716,14 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(b.serviceName,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: _txtP,
-                    )),
+                Text(
+                  b.serviceName,
+                  style: TextStyle(
+                    fontSize: _isTablet ? 15 : 14,
+                    fontWeight: FontWeight.w700,
+                    color: _txtP,
+                  ),
+                ),
                 const SizedBox(height: 3),
                 Text(b.storeName,
                     style: TextStyle(fontSize: 12, color: _txtS)),
@@ -633,12 +742,14 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
             _statusBadge(displayStatus),
             const SizedBox(height: 6),
             if (b.isInProgress)
-              Text('Track →',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.userPrimary,
-                  )),
+              Text(
+                'Track →',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.userPrimary,
+                ),
+              ),
           ]),
         ]),
       ),
@@ -652,12 +763,14 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
         color: AppTheme.getStatusBgColor(status),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(status,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: AppTheme.getStatusColor(status),
-          )),
+      child: Text(
+        status,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: AppTheme.getStatusColor(status),
+        ),
+      ),
     );
   }
 
@@ -702,16 +815,20 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
               size: 30, color: AppTheme.userPrimary),
         ),
         const SizedBox(height: 14),
-        Text('No bookings yet',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: _txtP,
-            )),
+        Text(
+          'No bookings yet',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: _txtP,
+          ),
+        ),
         const SizedBox(height: 6),
-        Text('Browse services and place your first booking',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: _txtS, height: 1.4)),
+        Text(
+          'Browse services and place your first booking',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 13, color: _txtS, height: 1.4),
+        ),
         const SizedBox(height: 18),
         FilledButton.icon(
           onPressed: () => context.go(AppRoutes.userMarketplace),
@@ -719,8 +836,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
           label: const Text('Browse Services'),
           style: FilledButton.styleFrom(
             backgroundColor: AppTheme.userPrimary,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
             padding:
                 const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),

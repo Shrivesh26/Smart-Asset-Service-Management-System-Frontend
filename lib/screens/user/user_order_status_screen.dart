@@ -16,6 +16,7 @@ class UserOrderStatusScreen extends StatefulWidget {
 }
 
 class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
+  // ── Theme helpers ──────────────────────────────────────────────────────
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
   Color get _surface =>
       _isDark ? AppTheme.darkBackground : const Color(0xFFF4F7F5);
@@ -25,6 +26,13 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
   Color get _txtS =>
       _isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary;
   Color get _div => _isDark ? AppTheme.darkDivider : AppTheme.dividerColor;
+
+  // ── Responsive helpers ─────────────────────────────────────────────────
+  double get _screenWidth => MediaQuery.of(context).size.width;
+  bool get _isTablet => _screenWidth >= 600;
+  bool get _isLargeTablet => _screenWidth >= 840;
+  double get _horizontalPadding => _isTablet ? 28.0 : 18.0;
+  double get _cardRadius => _isTablet ? 24.0 : 20.0;
 
   static const _steps = [
     _TrackStep('Requested', Icons.send_outlined, 0),
@@ -40,6 +48,25 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
     if (booking.isAccepted || booking.isProviderAccepted) return 2;
     if (booking.isAssigned || booking.isProviderRejected) return 1;
     return 0;
+  }
+
+  /// Cancel is only valid at step 0 (Requested) or step 1 (Finding Provider).
+  /// Once a provider has been assigned (step ≥ 2), the button is removed.
+  /// Additionally the service itself must allow pre-assignment cancellation.
+  bool _canShowCancelButton(BookingModel b) {
+    // Gate 1: booking-level cancellability (not already cancelled/completed)
+    if (!b.canUserCancel) return false;
+
+    // Gate 2: must be before provider assignment (steps 0 or 1 only)
+    final step = _stepFor(b);
+    if (step >= 2) return false;
+
+    // Gate 3: the service must allow cancellation before assignment
+    // BookingModel exposes this via allowCancellationBeforeAssign
+    // (mirrors ServiceModel.allowCancellationBeforeAssign stored on booking)
+    if (!(b.allowCancellationBeforeAssign ?? true)) return false;
+
+    return true;
   }
 
   String _statusMessageFor(BookingModel booking) {
@@ -107,8 +134,9 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
                         star <= selectedRating
                             ? Icons.star_rounded
                             : Icons.star_outline_rounded,
-                        color:
-                            star <= selectedRating ? const Color(0xFFFBBF24) : _txtS,
+                        color: star <= selectedRating
+                            ? const Color(0xFFFBBF24)
+                            : _txtS,
                         size: 36,
                       ),
                     ),
@@ -125,7 +153,8 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
                   hintText: 'Share your experience (optional)',
                   hintStyle: TextStyle(color: _txtS, fontSize: 13),
                   filled: true,
-                  fillColor: _isDark ? AppTheme.darkInput : Colors.grey.shade50,
+                  fillColor:
+                      _isDark ? AppTheme.darkInput : Colors.grey.shade50,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none,
@@ -172,7 +201,9 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          success ? 'Thanks for your feedback!' : (svc.error ?? 'Failed to submit.'),
+          success
+              ? 'Thanks for your feedback!'
+              : (svc.error ?? 'Failed to submit.'),
         ),
         backgroundColor:
             success ? AppTheme.statusCompleted : AppTheme.statusInactive,
@@ -187,10 +218,12 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
       context: context,
       builder: (d) => AlertDialog(
         backgroundColor: _card,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Cancel Booking',
-          style: TextStyle(fontWeight: FontWeight.w700, color: _txtP),
+          style:
+              TextStyle(fontWeight: FontWeight.w700, color: _txtP),
         ),
         content: Text(
           'Are you sure you want to cancel this request?',
@@ -255,63 +288,19 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
                     onRefresh: () => svc.fetchBookingById(widget.orderId),
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildStatusHero(b),
-                          const SizedBox(height: 18),
-                          _buildProgressTracker(b),
-                          const SizedBox(height: 18),
-                          _buildInfoCard('Service Details', [
-                            _infoRow('Service', b.serviceName),
-                            _infoRow('Category', b.serviceCategory),
-                            _infoRow('Business', b.storeName),
-                            _infoRow(
-                              'Address',
-                              b.userAddress.isEmpty ? '-' : b.userAddress,
-                            ),
-                          ]),
-                          const SizedBox(height: 14),
-                          _buildInfoCard('Schedule', [
-                            _infoRow('Preferred Date', b.preferredDate),
-                            _infoRow('Preferred Time', b.preferredTime),
-                            if (b.scheduledDate != null)
-                              _infoRow('Scheduled Date', b.scheduledDate!),
-                            if (b.scheduledTime != null)
-                              _infoRow('Scheduled Time', b.scheduledTime!),
-                          ]),
-                          const SizedBox(height: 14),
-                          if (b.shouldShowProviderToUser)
-                            _buildInfoCard('Assigned Provider', [
-                              _infoRow('Name', b.assignedProviderName ?? '-'),
-                              _infoRow('Phone', b.assignedProviderPhone ?? '-'),
-                              if (b.assignedAssetName != null)
-                                _infoRow('Asset', b.assignedAssetName!),
-                            ]),
-                          if (b.shouldShowProviderToUser) const SizedBox(height: 14),
-                          _buildInfoCard('Issue Reported', [
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                b.problemDescription.isEmpty
-                                    ? 'No description provided.'
-                                    : b.problemDescription,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: _txtP,
-                                  height: 1.55,
-                                ),
-                              ),
-                            ),
-                          ]),
-                          const SizedBox(height: 14),
-                          _buildCostBreakdownCard(b),
-                          const SizedBox(height: 14),
-                          if (b.canUserCancel) _buildCancelButton(svc),
-                          if (b.isCompleted) _buildRatingCard(b, svc),
-                          const SizedBox(height: 28),
-                        ],
+                      child: Center(
+                        // Constrains content width on large tablets
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: _isLargeTablet ? 720 : double.infinity,
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.all(_horizontalPadding),
+                            child: _isLargeTablet
+                                ? _buildWideContent(b, svc)
+                                : _buildNarrowContent(b, svc),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -321,6 +310,144 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
     );
   }
 
+  // ── Narrow layout (phone + small tablet) ──────────────────────────────
+  Widget _buildNarrowContent(BookingModel b, BookingService svc) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildStatusHero(b),
+        const SizedBox(height: 18),
+        _buildProgressTracker(b),
+        const SizedBox(height: 18),
+        ..._buildInfoCards(b),
+        if (_canShowCancelButton(b)) _buildCancelButton(svc),
+        if (b.isCompleted) _buildRatingCard(b, svc),
+        const SizedBox(height: 28),
+      ],
+    );
+  }
+
+  // ── Wide layout (large tablet) ─────────────────────────────────────────
+  Widget _buildWideContent(BookingModel b, BookingService svc) {
+    return Column(
+      children: [
+        _buildStatusHero(b),
+        const SizedBox(height: 18),
+        _buildProgressTracker(b),
+        const SizedBox(height: 18),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                children: [
+                  _buildInfoCard('Service Details', [
+                    _infoRow('Service', b.serviceName),
+                    _infoRow('Category', b.serviceCategory),
+                    _infoRow('Business', b.storeName),
+                    _infoRow('Address',
+                        b.userAddress.isEmpty ? '-' : b.userAddress),
+                  ]),
+                  const SizedBox(height: 14),
+                  _buildInfoCard('Schedule', [
+                    _infoRow('Preferred Date', b.preferredDate),
+                    _infoRow('Preferred Time', b.preferredTime),
+                    if (b.scheduledDate != null)
+                      _infoRow('Scheduled Date', b.scheduledDate!),
+                    if (b.scheduledTime != null)
+                      _infoRow('Scheduled Time', b.scheduledTime!),
+                  ]),
+                  const SizedBox(height: 14),
+                  _buildInfoCard('Issue Reported', [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        b.problemDescription.isEmpty
+                            ? 'No description provided.'
+                            : b.problemDescription,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: _txtP,
+                          height: 1.55,
+                        ),
+                      ),
+                    ),
+                  ]),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                children: [
+                  if (b.shouldShowProviderToUser)
+                    _buildInfoCard('Assigned Provider', [
+                      _infoRow('Name', b.assignedProviderName ?? '-'),
+                      _infoRow('Phone', b.assignedProviderPhone ?? '-'),
+                      if (b.assignedAssetName != null)
+                        _infoRow('Asset', b.assignedAssetName!),
+                    ]),
+                  if (b.shouldShowProviderToUser) const SizedBox(height: 14),
+                  _buildCostBreakdownCard(b),
+                  const SizedBox(height: 14),
+                  if (_canShowCancelButton(b)) _buildCancelButton(svc),
+                  if (b.isCompleted) _buildRatingCard(b, svc),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 28),
+      ],
+    );
+  }
+
+  // ── Info cards for narrow layout ───────────────────────────────────────
+  List<Widget> _buildInfoCards(BookingModel b) {
+    return [
+      _buildInfoCard('Service Details', [
+        _infoRow('Service', b.serviceName),
+        _infoRow('Category', b.serviceCategory),
+        _infoRow('Business', b.storeName),
+        _infoRow('Address', b.userAddress.isEmpty ? '-' : b.userAddress),
+      ]),
+      const SizedBox(height: 14),
+      _buildInfoCard('Schedule', [
+        _infoRow('Preferred Date', b.preferredDate),
+        _infoRow('Preferred Time', b.preferredTime),
+        if (b.scheduledDate != null)
+          _infoRow('Scheduled Date', b.scheduledDate!),
+        if (b.scheduledTime != null)
+          _infoRow('Scheduled Time', b.scheduledTime!),
+      ]),
+      const SizedBox(height: 14),
+      if (b.shouldShowProviderToUser) ...[
+        _buildInfoCard('Assigned Provider', [
+          _infoRow('Name', b.assignedProviderName ?? '-'),
+          _infoRow('Phone', b.assignedProviderPhone ?? '-'),
+          if (b.assignedAssetName != null)
+            _infoRow('Asset', b.assignedAssetName!),
+        ]),
+        const SizedBox(height: 14),
+      ],
+      _buildInfoCard('Issue Reported', [
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(
+            b.problemDescription.isEmpty
+                ? 'No description provided.'
+                : b.problemDescription,
+            style: TextStyle(fontSize: 13, color: _txtP, height: 1.55),
+          ),
+        ),
+      ]),
+      const SizedBox(height: 14),
+      _buildCostBreakdownCard(b),
+      const SizedBox(height: 14),
+    ];
+  }
+
+  // ── Header ─────────────────────────────────────────────────────────────
   Widget _buildHeader() {
     return Container(
       decoration: BoxDecoration(
@@ -361,15 +488,16 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
     );
   }
 
+  // ── Status hero ────────────────────────────────────────────────────────
   Widget _buildStatusHero(BookingModel b) {
     final isCancelled = b.status == AppConstants.statusCancelled;
     final displayStatus = b.userFacingStatusLabel;
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(_isTablet ? 20 : 18),
       decoration: BoxDecoration(
         color: _card,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(_cardRadius),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(_isDark ? 0.2 : 0.05),
@@ -381,8 +509,8 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
       child: Row(
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: _isTablet ? 62 : 56,
+            height: _isTablet ? 62 : 56,
             decoration: BoxDecoration(
               color: isCancelled
                   ? AppTheme.statusInactive.withOpacity(0.12)
@@ -396,7 +524,7 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
               color: isCancelled
                   ? AppTheme.statusInactive
                   : AppTheme.getStatusColor(displayStatus),
-              size: 28,
+              size: _isTablet ? 30 : 28,
             ),
           ),
           const SizedBox(width: 14),
@@ -407,18 +535,20 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
                 Text(
                   b.serviceName,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: _isTablet ? 17 : 16,
                     fontWeight: FontWeight.w700,
                     color: _txtP,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(b.storeName, style: TextStyle(fontSize: 12, color: _txtS)),
+                Text(b.storeName,
+                    style: TextStyle(fontSize: 12, color: _txtS)),
               ],
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: isCancelled
                   ? AppTheme.statusInactive.withOpacity(0.12)
@@ -441,15 +571,16 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
     );
   }
 
+  // ── Progress tracker ───────────────────────────────────────────────────
   Widget _buildProgressTracker(BookingModel booking) {
     final isCancelled = booking.status == AppConstants.statusCancelled;
     final currentStep = isCancelled ? -1 : _stepFor(booking);
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(_isTablet ? 20 : 18),
       decoration: BoxDecoration(
         color: _card,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(_cardRadius),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(_isDark ? 0.2 : 0.05),
@@ -466,7 +597,7 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
               Text(
                 'Tracking Progress',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: _isTablet ? 15 : 14,
                   fontWeight: FontWeight.w700,
                   color: _txtP,
                 ),
@@ -474,7 +605,8 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
               if (isCancelled) ...[
                 const SizedBox(width: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: AppTheme.statusInactive.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(20),
@@ -538,8 +670,8 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
                         children: [
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 300),
-                            width: 34,
-                            height: 34,
+                            width: _isTablet ? 38 : 34,
+                            height: _isTablet ? 38 : 34,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: circleColor,
@@ -592,17 +724,21 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
           ),
           const SizedBox(height: 14),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: isCancelled
                   ? AppTheme.statusInactive.withOpacity(0.08)
-                  : AppTheme.userPrimary.withOpacity(_isDark ? 0.15 : 0.07),
+                  : AppTheme.userPrimary
+                      .withOpacity(_isDark ? 0.15 : 0.07),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
                 Icon(
-                  isCancelled ? Icons.cancel_outlined : Icons.info_outline_rounded,
+                  isCancelled
+                      ? Icons.cancel_outlined
+                      : Icons.info_outline_rounded,
                   color: isCancelled
                       ? AppTheme.statusInactive
                       : AppTheme.userPrimary,
@@ -629,13 +765,14 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
     );
   }
 
+  // ── Info card ──────────────────────────────────────────────────────────
   Widget _buildInfoCard(String title, List<Widget> children) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(_isTablet ? 18 : 16),
       decoration: BoxDecoration(
         color: _card,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(_cardRadius),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(_isDark ? 0.18 : 0.04),
@@ -650,7 +787,7 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
           Text(
             title,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: _isTablet ? 15 : 14,
               fontWeight: FontWeight.w700,
               color: _txtP,
             ),
@@ -686,8 +823,10 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
                 _money((asset['price'] as num?)?.toDouble() ?? 0),
               )),
         Divider(height: 18, color: _div),
-        _infoRow(cost.isFinal ? 'Final Total' : 'Estimated Total',
-            _money(cost.total)),
+        _infoRow(
+          cost.isFinal ? 'Final Total' : 'Estimated Total',
+          _money(cost.total),
+        ),
       ],
     );
   }
@@ -699,8 +838,9 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 110,
-            child: Text(label, style: TextStyle(fontSize: 12, color: _txtS)),
+            width: _isTablet ? 130 : 110,
+            child: Text(label,
+                style: TextStyle(fontSize: 12, color: _txtS)),
           ),
           Expanded(
             child: Text(
@@ -717,12 +857,18 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
     );
   }
 
+  // ── Cancel button ──────────────────────────────────────────────────────
+  // Rules:
+  //   1. Booking must not already be cancelled or completed (canUserCancel)
+  //   2. Step must be < 2 — i.e., "Requested" or "Finding Provider" only.
+  //      Once a provider is assigned (step 2+) the button disappears.
+  //   3. The service must have allowCancellationBeforeAssign == true.
   Widget _buildCancelButton(BookingService svc) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: SizedBox(
         width: double.infinity,
-        height: 52,
+        height: _isTablet ? 56 : 52,
         child: OutlinedButton.icon(
           onPressed: svc.isLoading ? null : _cancelBooking,
           icon: const Icon(Icons.close_rounded, size: 18),
@@ -742,6 +888,7 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
     );
   }
 
+  // ── Rating card ────────────────────────────────────────────────────────
   Widget _buildRatingCard(BookingModel b, BookingService svc) {
     return _buildInfoCard('Your Rating', [
       if (b.feedbackRating != null) ...[
@@ -756,7 +903,7 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
                 color: i < (b.feedbackRating as int)
                     ? const Color(0xFFFBBF24)
                     : _txtS,
-                size: 24,
+                size: _isTablet ? 28 : 24,
               ),
             ),
             const SizedBox(width: 10),
