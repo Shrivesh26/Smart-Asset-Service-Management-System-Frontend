@@ -264,7 +264,8 @@ class ApiService {
       });
 
       final response = await _dio.post<Map<String, dynamic>>(
-        'http://localhost:3000/uploads',
+        // 'http://localhost:3000/uploads',
+        '$baseUrl/uploads',
         data: formData,
         options: Options(
           headers: {

@@ -5,7 +5,8 @@ class AppConstants {
 
   // ── API Base URL ────────────────────────────────────────────────────
   // Replace with your actual backend URL
-  static const String baseUrl = 'http://localhost:3000/api/v1';
+  // static const String baseUrl = 'http://localhost:3000/api/v1';
+  static const String baseUrl = 'https://smart-asset-service-management-system.onrender.com/api/v1';
 
   // ── SharedPreferences Keys ──────────────────────────────────────────
   static const String keyToken = 'auth_token';
