@@ -156,56 +156,42 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
 
   // ── Wide layout (large tablet / desktop) ──────────────────────────────
   Widget _buildWideLayout(
-      BookingService bookingSvc, ServiceCatalogService serviceSvc) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildQuickStats(bookingSvc),
-        const SizedBox(height: 26),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Left column — categories + bookings
-            Expanded(
-              flex: 5,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _sectionHeader('Featured Services', () {
-                    context.go(AppRoutes.userMarketplace);
-                  }),
-                  const SizedBox(height: 12),
-                  _buildFeaturedCarousel(serviceSvc.services),
-                  const SizedBox(height: 26),
-                  _sectionHeader('Browse Categories', () {
-                    context.go(AppRoutes.userMarketplace);
-                  }),
-                  const SizedBox(height: 12),
-                  _buildCategoryGrid(serviceSvc.categories),
-                ],
-              ),
-            ),
-            const SizedBox(width: 24),
-            // Right column — recent bookings
-            Expanded(
-              flex: 4,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _sectionHeader('Recent Bookings', () {
-                    context.go(AppRoutes.userOrderHistory);
-                  }),
-                  const SizedBox(height: 12),
-                  _buildBookingsList(bookingSvc),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 80),
-      ],
-    );
-  }
+  BookingService bookingSvc,
+  ServiceCatalogService serviceSvc,
+) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      _buildQuickStats(bookingSvc),
+      const SizedBox(height: 26),
+
+      _sectionHeader('Featured Services', () {
+        context.go(AppRoutes.userMarketplace);
+      }),
+      const SizedBox(height: 12),
+      _buildFeaturedCarousel(serviceSvc.services),
+
+      const SizedBox(height: 26),
+
+      _sectionHeader('Browse Categories', () {
+        context.go(AppRoutes.userMarketplace);
+      }),
+      const SizedBox(height: 12),
+      _buildCategoryGrid(serviceSvc.categories),
+
+      const SizedBox(height: 26),
+
+      // ✅ NOW bookings are back BELOW
+      _sectionHeader('Recent Bookings', () {
+        context.go(AppRoutes.userOrderHistory);
+      }),
+      const SizedBox(height: 12),
+      _buildBookingsList(bookingSvc),
+
+      const SizedBox(height: 80),
+    ],
+  );
+}
 
   // ── Header background ──────────────────────────────────────────────────
   Widget _headerBackground(dynamic user) {
