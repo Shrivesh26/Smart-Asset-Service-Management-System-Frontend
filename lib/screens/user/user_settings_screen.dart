@@ -92,7 +92,7 @@ class UserSettingsScreen extends StatelessWidget {
                       subtitle: 'Common questions and guides',
                       dark: dark,
                       onTap: () =>
-                          context.go(AppRoutes.userHelpSupport)),
+                          context.go(AppRoutes.userHelpFaq)),
                   _divider(context),
                   _buildTile(context,
                       icon: Icons.chat_bubble_outline_rounded,
@@ -1049,7 +1049,7 @@ class _ContactSheet extends StatelessWidget {
         ]),
         const SizedBox(height: 16),
         _contactRow(Icons.email_outlined, 'Email',
-            'support@smartasset.app'),
+            'kashyapsam733@gmail.com'),
         const SizedBox(height: 10),
         _contactRow(Icons.phone_outlined, 'Phone', '+91 98000 00000'),
         const SizedBox(height: 10),

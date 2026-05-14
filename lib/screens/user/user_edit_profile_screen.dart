@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -13,8 +14,7 @@ class UserEditProfileScreen extends StatefulWidget {
   const UserEditProfileScreen({super.key});
 
   @override
-  State<UserEditProfileScreen> createState() =>
-      _UserEditProfileScreenState();
+  State<UserEditProfileScreen> createState() => _UserEditProfileScreenState();
 }
 
 class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
@@ -26,9 +26,15 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
   final _stateCtrl = TextEditingController();
   final _pinCtrl = TextEditingController();
 
-  File? _selectedImage;
+  // ── Image state ─────────────────────────────────────────────────────────
+  // _previewBytes → used for display via MemoryImage (no _namespace errors)
+  // _selectedImageFile → passed to uploadProfileImage
+  File? _selectedImageFile;
+  Uint8List? _previewBytes;
+
   bool _loading = false;
 
+  // ── Theme helpers ───────────────────────────────────────────────────────
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
   Color get _surface =>
       _isDark ? AppTheme.darkBackground : const Color(0xFFF4F7F5);
@@ -64,27 +70,42 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
     super.dispose();
   }
 
+  // ── Resolved image provider ─────────────────────────────────────────────
+  // Priority: locally picked bytes → server URL → null (shows initials)
   ImageProvider<Object>? get _imageProvider {
-    if (_selectedImage != null) return FileImage(_selectedImage!);
-    final url =
-        context.read<AuthService>().currentUser?.profilePhoto;
+    if (_previewBytes != null) return MemoryImage(_previewBytes!);
+    final url = context.read<AuthService>().currentUser?.profilePhoto;
     if (url != null && url.isNotEmpty) return NetworkImage(url);
     return null;
   }
 
+  // ── Pick image ──────────────────────────────────────────────────────────
   Future<void> _pickImage() async {
-    final file = await ImagePicker().pickImage(
+    final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
       imageQuality: 80,
       maxWidth: 800,
     );
-    if (file != null) setState(() => _selectedImage = File(file.path));
+    if (picked == null) return;
+
+    // Read raw bytes immediately — this avoids _namespace / content-URI
+    // permission errors that occur when using dart:io File on Android
+    // gallery URIs (content:// scheme cannot be opened as a File path).
+    final bytes = await picked.readAsBytes();
+
+    setState(() {
+      _selectedImageFile = File(picked.path); // upload only
+      _previewBytes = bytes;                  // display only
+    });
   }
 
+  // ── Save ────────────────────────────────────────────────────────────────
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
+      final auth = context.read<AuthService>();
+
       final data = <String, dynamic>{
         'fullName': _nameCtrl.text.trim(),
         'phone': _phoneCtrl.text.trim(),
@@ -96,15 +117,13 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
         },
       };
 
-      if (_selectedImage != null) {
-        final url = await context
-            .read<AuthService>()
-            .uploadProfileImage(_selectedImage!);
+      if (_selectedImageFile != null) {
+        final url = await auth.uploadProfileImage(_selectedImageFile!);
         if (url != null) data['avatarUrl'] = url;
       }
 
-      await context.read<AuthService>().updateProfile(data);
-      await context.read<AuthService>().refreshProfile();
+      await auth.updateProfile(data);
+      await auth.refreshProfile();
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -129,6 +148,7 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
     }
   }
 
+  // ── Build ───────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthService>().currentUser;
@@ -143,11 +163,8 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(18),
               child: Column(children: [
-                // Avatar card
                 _buildAvatarCard(user),
                 const SizedBox(height: 16),
-
-                // Personal info
                 _buildSection('Personal Info', Icons.person_outline_rounded, [
                   _field('Full Name', _nameCtrl, Icons.badge_outlined,
                       validator: (v) =>
@@ -157,8 +174,6 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                       keyboard: TextInputType.phone),
                 ]),
                 const SizedBox(height: 14),
-
-                // Address
                 _buildSection('Address', Icons.location_on_outlined, [
                   _field('Street Address', _addressCtrl, Icons.map_outlined),
                   const SizedBox(height: 12),
@@ -177,8 +192,6 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                       }),
                 ]),
                 const SizedBox(height: 24),
-
-                // Save button
                 SizedBox(
                   width: double.infinity,
                   height: 54,
@@ -210,6 +223,7 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
     );
   }
 
+  // ── Header ──────────────────────────────────────────────────────────────
   Widget _buildHeader() {
     return Container(
       decoration: BoxDecoration(
@@ -240,8 +254,7 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                         color: Colors.white,
                       )),
                   Text('Update your personal information',
-                      style: TextStyle(
-                          fontSize: 12, color: Colors.white70)),
+                      style: TextStyle(fontSize: 12, color: Colors.white70)),
                 ],
               ),
             ),
@@ -251,7 +264,10 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
     );
   }
 
+  // ── Avatar card ─────────────────────────────────────────────────────────
   Widget _buildAvatarCard(dynamic user) {
+    final provider = _imageProvider;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -277,19 +293,19 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                     color: AppTheme.userPrimary.withOpacity(0.5),
                     width: 2.5),
               ),
-              child: CircleAvatar(
-                radius: 44,
-                backgroundColor:
-                    AppTheme.userPrimary.withOpacity(0.12),
-                backgroundImage: _imageProvider,
-                child: _imageProvider == null
-                    ? Text(user?.initials ?? 'U',
-                        style: const TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.userPrimary,
-                        ))
-                    : null,
+              child: ClipOval(
+                child: SizedBox(
+                  width: 88,
+                  height: 88,
+                  child: provider != null
+                      ? Image(
+                          image: provider,
+                          fit: BoxFit.cover,
+                          // Graceful fallback on broken URL / permission error
+                          errorBuilder: (_, __, ___) => _initialsWidget(user),
+                        )
+                      : _initialsWidget(user),
+                ),
               ),
             ),
             Positioned(
@@ -312,22 +328,43 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
         const SizedBox(height: 12),
         Text(user?.fullName ?? 'User',
             style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: _txtP)),
+                fontSize: 16, fontWeight: FontWeight.w700, color: _txtP)),
         const SizedBox(height: 3),
         Text(user?.email ?? '',
             style: TextStyle(fontSize: 12, color: _txtS)),
         const SizedBox(height: 8),
-        Text('Tap avatar to change photo',
-            style: TextStyle(
-                fontSize: 11,
-                color: AppTheme.userPrimary,
-                fontWeight: FontWeight.w500)),
+        Text(
+          _previewBytes != null
+              ? '✓ New photo selected — tap Save to apply'
+              : 'Tap avatar to change photo',
+          style: TextStyle(
+            fontSize: 11,
+            color: _previewBytes != null
+                ? AppTheme.statusCompleted
+                : AppTheme.userPrimary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ]),
     );
   }
 
+  Widget _initialsWidget(dynamic user) {
+    return Container(
+      color: AppTheme.userPrimary.withOpacity(0.12),
+      alignment: Alignment.center,
+      child: Text(
+        user?.initials ?? 'U',
+        style: const TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.w700,
+          color: AppTheme.userPrimary,
+        ),
+      ),
+    );
+  }
+
+  // ── Section ─────────────────────────────────────────────────────────────
   Widget _buildSection(String title, IconData icon, List<Widget> children) {
     return Container(
       width: double.infinity,
@@ -343,14 +380,14 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
           ),
         ],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      child:
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Container(
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: AppTheme.userPrimary
-                  .withOpacity(_isDark ? 0.2 : 0.1),
+              color: AppTheme.userPrimary.withOpacity(_isDark ? 0.2 : 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: AppTheme.userPrimary, size: 17),
@@ -368,6 +405,7 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
     );
   }
 
+  // ── Field ───────────────────────────────────────────────────────────────
   Widget _field(
     String label,
     TextEditingController ctrl,
@@ -400,8 +438,8 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
             borderRadius: BorderRadius.circular(14),
             borderSide: const BorderSide(
                 color: AppTheme.statusInactive, width: 1.2)),
-        contentPadding: const EdgeInsets.symmetric(
-            horizontal: 14, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       ),
     );
   }

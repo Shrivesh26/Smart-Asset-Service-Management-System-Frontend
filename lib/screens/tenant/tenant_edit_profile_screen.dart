@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -100,7 +101,12 @@ class _TenantEditProfileScreenState extends State<TenantEditProfileScreen> {
   final _stateCtrl = TextEditingController();
   final _pinCtrl = TextEditingController();
 
-  File? _selectedImage;
+  // ── Image state ─────────────────────────────────────────────────────────
+  // We store raw bytes so MemoryImage works on all Android API levels
+  // without the _namespace / content-URI access errors from FileImage.
+  File? _selectedImageFile;      // passed to upload
+  Uint8List? _previewBytes;      // used for local preview only
+
   bool _loading = false;
   bool _isEditing = false;
   BusinessType? _selectedBusinessType;
@@ -146,25 +152,32 @@ class _TenantEditProfileScreenState extends State<TenantEditProfileScreen> {
   Color get _fill => _isDark ? AppTheme.darkInput : Colors.grey.shade100;
   Color get _border => _isDark ? AppTheme.darkDivider : AppTheme.dividerColor;
 
-  // ── Avatar image ────────────────────────────────────────────────────────
+  // ── Resolved image provider ─────────────────────────────────────────────
+  // Priority: local picked bytes → server URL → null (shows initials)
   ImageProvider<Object>? get _imageProvider {
+    if (_previewBytes != null) return MemoryImage(_previewBytes!);
     final url = context.read<AuthService>().currentUser?.profilePhoto;
-
-    if (url != null && url.isNotEmpty) {
-      return NetworkImage(url); // ✅ ONLY server image
-    }
-
+    if (url != null && url.isNotEmpty) return NetworkImage(url);
     return null;
   }
 
   // ── Pick image ──────────────────────────────────────────────────────────
   Future<void> _pickImage() async {
-    final file = await ImagePicker().pickImage(
+    final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
       imageQuality: 80,
       maxWidth: 800,
     );
-    if (file != null) setState(() => _selectedImage = File(file.path));
+    if (picked == null) return;
+
+    // Read as bytes immediately — avoids _namespace / content-URI errors
+    // that occur when passing Android content:// URIs to dart:io File.
+    final bytes = await picked.readAsBytes();
+
+    setState(() {
+      _selectedImageFile = File(picked.path); // for upload
+      _previewBytes = bytes;                  // for preview
+    });
   }
 
   // ── Save ────────────────────────────────────────────────────────────────
@@ -188,23 +201,19 @@ class _TenantEditProfileScreenState extends State<TenantEditProfileScreen> {
         },
       };
 
-      // ✅ Upload first → get persistent URL
-      if (_selectedImage != null) {
-        final imageUrl = await auth.uploadProfileImage(_selectedImage!);
-
+      if (_selectedImageFile != null) {
+        final imageUrl = await auth.uploadProfileImage(_selectedImageFile!);
         if (imageUrl != null && imageUrl.toString().isNotEmpty) {
           data['avatarUrl'] = imageUrl;
         }
       }
 
-      // ✅ Update profile once
       await auth.updateProfile(data);
-
-      // ✅ Refresh to get latest server data
       await auth.refreshProfile();
 
-      // ✅ Clear local file completely
-      _selectedImage = null;
+      // Clear local preview — server image is now the source of truth
+      _selectedImageFile = null;
+      _previewBytes = null;
 
       if (!mounted) return;
       setState(() => _isEditing = false);
@@ -213,6 +222,9 @@ class _TenantEditProfileScreenState extends State<TenantEditProfileScreen> {
         SnackBar(
           content: const Text('Profile updated successfully'),
           backgroundColor: AppTheme.statusCompleted,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
     } catch (e) {
@@ -221,6 +233,9 @@ class _TenantEditProfileScreenState extends State<TenantEditProfileScreen> {
         SnackBar(
           content: Text('Error: $e'),
           backgroundColor: AppTheme.statusInactive,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
     } finally {
@@ -252,12 +267,13 @@ class _TenantEditProfileScreenState extends State<TenantEditProfileScreen> {
                       icon: Icons.person_outline_rounded,
                       children: [
                         _field(
-                            label: 'Full Name',
-                            controller: _nameCtrl,
-                            icon: Icons.badge_outlined,
-                            validator: (v) =>
-                                (v?.trim().isEmpty ?? true) ? 'Required' : null,
-                            disabled: false),
+                          label: 'Full Name',
+                          controller: _nameCtrl,
+                          icon: Icons.badge_outlined,
+                          validator: (v) =>
+                              (v?.trim().isEmpty ?? true) ? 'Required' : null,
+                          disabled: false,
+                        ),
                         _field(
                           label: 'Phone Number',
                           controller: _phoneCtrl,
@@ -381,14 +397,19 @@ class _TenantEditProfileScreenState extends State<TenantEditProfileScreen> {
                   onPressed: () => setState(() => _isEditing = true),
                   icon: const Icon(Icons.edit_outlined,
                       color: Colors.white, size: 16),
-                  label:
-                      const Text('Edit', style: TextStyle(color: Colors.white)),
+                  label: const Text('Edit',
+                      style: TextStyle(color: Colors.white)),
                 )
               else ...[
                 TextButton(
                   onPressed: _loading
                       ? null
-                      : () => setState(() => _isEditing = false),
+                      : () => setState(() {
+                            _isEditing = false;
+                            // Discard unsaved local preview
+                            _previewBytes = null;
+                            _selectedImageFile = null;
+                          }),
                   child: const Text('Cancel',
                       style: TextStyle(color: Colors.white70)),
                 ),
@@ -416,6 +437,8 @@ class _TenantEditProfileScreenState extends State<TenantEditProfileScreen> {
 
   // ── Avatar card ─────────────────────────────────────────────────────────
   Widget _buildAvatarCard(dynamic user) {
+    final provider = _imageProvider;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -444,20 +467,19 @@ class _TenantEditProfileScreenState extends State<TenantEditProfileScreen> {
                       width: 2.5,
                     ),
                   ),
-                  child: CircleAvatar(
-                    radius: 40,
-                    backgroundColor: AppTheme.tenantPrimary.withOpacity(0.12),
-                    backgroundImage: _imageProvider,
-                    child: (_imageProvider == null)
-                        ? Text(
-                            user?.initials ?? 'T',
-                            style: const TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.tenantPrimary,
-                            ),
-                          )
-                        : null,
+                  child: ClipOval(
+                    child: SizedBox(
+                      width: 80,
+                      height: 80,
+                      child: provider != null
+                          ? Image(
+                              image: provider,
+                              fit: BoxFit.cover,
+                              // Graceful error — fall back to initials
+                              errorBuilder: (_, __, ___) => _initialsAvatar(user),
+                            )
+                          : _initialsAvatar(user),
+                    ),
                   ),
                 ),
                 if (_isEditing)
@@ -489,22 +511,40 @@ class _TenantEditProfileScreenState extends State<TenantEditProfileScreen> {
             ),
           ),
           const SizedBox(height: 3),
-          Text(
-            user?.email ?? '',
-            style: TextStyle(fontSize: 12, color: _txtS),
-          ),
+          Text(user?.email ?? '',
+              style: TextStyle(fontSize: 12, color: _txtS)),
           if (_isEditing) ...[
             const SizedBox(height: 10),
             Text(
-              'Tap avatar to change photo',
+              _previewBytes != null
+                  ? '✓ New photo selected — tap Save to apply'
+                  : 'Tap avatar to change photo',
+              textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 11,
-                color: AppTheme.tenantPrimary,
+                color: _previewBytes != null
+                    ? AppTheme.statusCompleted
+                    : AppTheme.tenantPrimary,
                 fontWeight: FontWeight.w500,
               ),
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _initialsAvatar(dynamic user) {
+    return Container(
+      color: AppTheme.tenantPrimary.withOpacity(0.12),
+      alignment: Alignment.center,
+      child: Text(
+        user?.initials ?? 'T',
+        style: const TextStyle(
+          fontSize: 26,
+          fontWeight: FontWeight.w700,
+          color: AppTheme.tenantPrimary,
+        ),
       ),
     );
   }
@@ -538,8 +578,8 @@ class _TenantEditProfileScreenState extends State<TenantEditProfileScreen> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color:
-                      AppTheme.tenantPrimary.withOpacity(_isDark ? 0.2 : 0.1),
+                  color: AppTheme.tenantPrimary
+                      .withOpacity(_isDark ? 0.2 : 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: AppTheme.tenantPrimary, size: 17),
@@ -598,13 +638,17 @@ class _TenantEditProfileScreenState extends State<TenantEditProfileScreen> {
         controller: controller,
         keyboardType: keyboard,
         validator: validator,
-        style: TextStyle(color: _txtP, fontSize: 14),
+        enabled: !disabled,
+        style: TextStyle(
+          color: disabled ? _txtS : _txtP,
+          fontSize: 14,
+        ),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(color: _txtS, fontSize: 13),
           prefixIcon: Icon(icon, color: AppTheme.tenantPrimary, size: 20),
           filled: true,
-          fillColor: _fill,
+          fillColor: disabled ? _fill.withOpacity(0.5) : _fill,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide(color: _border),
@@ -612,6 +656,10 @@ class _TenantEditProfileScreenState extends State<TenantEditProfileScreen> {
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide(color: _border),
+          ),
+          disabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: _border.withOpacity(0.5)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
@@ -638,7 +686,8 @@ class _TenantEditProfileScreenState extends State<TenantEditProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Business Type', style: TextStyle(fontSize: 11, color: _txtS)),
+            Text('Business Type',
+                style: TextStyle(fontSize: 11, color: _txtS)),
             const SizedBox(height: 4),
             Text(
               _selectedBusinessType?.label ?? '—',
@@ -688,14 +737,7 @@ class _TenantEditProfileScreenState extends State<TenantEditProfileScreen> {
         items: BusinessType.values.map((type) {
           return DropdownMenuItem(
             value: type,
-            child: Row(
-              children: [
-                // Icon(type.icon,
-                //     color: AppTheme.tenantPrimary, size: 18),
-                // const SizedBox(width: 10),
-                Text(type.label),
-              ],
-            ),
+            child: Text(type.label),
           );
         }).toList(),
         onChanged: (v) => setState(() => _selectedBusinessType = v),
@@ -703,7 +745,7 @@ class _TenantEditProfileScreenState extends State<TenantEditProfileScreen> {
     );
   }
 
-  // ── Save button (bottom of form when editing) ───────────────────────────
+  // ── Save button ─────────────────────────────────────────────────────────
   Widget _buildSaveButton() {
     return SizedBox(
       width: double.infinity,
@@ -721,9 +763,10 @@ class _TenantEditProfileScreenState extends State<TenantEditProfileScreen> {
         label: Text(_loading ? 'Saving...' : 'Save Changes'),
         style: FilledButton.styleFrom(
           backgroundColor: AppTheme.tenantPrimary,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16)),
+          textStyle:
+              const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
         ),
       ),
     );

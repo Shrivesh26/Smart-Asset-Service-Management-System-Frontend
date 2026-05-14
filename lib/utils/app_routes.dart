@@ -5,6 +5,8 @@ import 'package:smart_asset_service/screens/provider/provider_privacy_policy_scr
 import 'package:smart_asset_service/screens/tenant/tenant_edit_profile_screen.dart';
 import 'package:smart_asset_service/screens/tenant/tenant_help_support_screen.dart';
 import 'package:smart_asset_service/screens/tenant/tenant_privacy_policy_screen.dart';
+import 'package:smart_asset_service/screens/user/UserHelpFaqScreen.dart';
+import 'package:smart_asset_service/screens/user/UserPrivacyPolicyScreen.dart';
 import 'package:smart_asset_service/screens/user/user_edit_profile_screen.dart';
 
 import '../services/auth_service.dart';
@@ -108,7 +110,7 @@ class AppRoutes {
   static const String userNotifications  = '/user/notifications';
   static const String userSettings       = '/user/settings';
   static const String userEditProfile     = '/user/settings/edit-profile';
-  static const String userHelpSupport    = '/user/settings/help-support';
+  static const String userHelpFaq    = '/user/settings/help-faq';
   static const String userPrivacyPolicy  = '/user/settings/privacy-policy';
 
   // ── Router factory ─────────────────────────────────────────────────
@@ -321,6 +323,8 @@ class AppRoutes {
             GoRoute(path: userNotifications, builder: (_, __) => const UserNotificationsScreen()),
             GoRoute(path: userSettings,      builder: (_, __) => const UserSettingsScreen()),
             GoRoute(path: userEditProfile,   builder: (_, __) => const UserEditProfileScreen()),
+            GoRoute(path: userHelpFaq, builder: (_, __) => const UserHelpFaqScreen()),
+            GoRoute(path: userPrivacyPolicy, builder: (_, __) => const UserPrivacyPolicyScreen())
           ],
         ),
       ],
