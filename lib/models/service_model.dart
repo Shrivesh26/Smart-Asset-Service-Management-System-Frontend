@@ -1,3 +1,5 @@
+import '../utils/url_utils.dart';
+
 class ServiceModel {
   final String id;
   final String tenantId;
@@ -71,6 +73,15 @@ class ServiceModel {
     return words.isEmpty ? null : words.join(' ');
   }
 
+  static String? _firstImageUrl(dynamic images) {
+    if (images is! List || images.isEmpty) return null;
+    final first = images.first;
+    if (first is Map) {
+      return _asString(first['url'] ?? first['imageUrl']);
+    }
+    return _asString(first);
+  }
+
   factory ServiceModel.fromJson(Map<String, dynamic> json) {
     final tenantRaw = json['tenant'];
     final tenantMap =
@@ -120,11 +131,11 @@ class ServiceModel {
       duration: durationValue is num
           ? durationValue.toInt()
           : int.tryParse(durationValue?.toString() ?? '') ?? 0,
-      imageUrl: _asString(json['imageUrl']) ??
-          _asString(json['image']) ??
-          (json['images'] is List && json['images'].isNotEmpty
-              ? json['images'][0].toString()
-              : null),
+      imageUrl: UrlUtils.normalizeMediaUrl(
+        _asString(json['imageUrl']) ??
+            _asString(json['image']) ??
+            _firstImageUrl(json['images']),
+      ),
       providerIds: providersRaw
           .map((item) =>
               item is Map ? item['_id']?.toString() ?? '' : item.toString())

@@ -214,7 +214,12 @@ class BookingModel {
       (isAccepted || isInProgress || isCompleted || isCancelled);
   bool get canTenantCancel =>
       !isCompleted && !isCancelled;
-  bool get canUserCancel => allowCancellation && !isCompleted && !isCancelled;
+  bool get canUserCancel =>
+      allowCancellation &&
+      allowCancellationBeforeAssign &&
+      !hasProvider &&
+      !isCompleted &&
+      !isCancelled;
   bool get shouldShowCancellationPolicy => allowCancellation;
 
   bool get hasProvider =>

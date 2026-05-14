@@ -1,4 +1,5 @@
 import '../utils/app_constants.dart';
+import '../utils/url_utils.dart';
 
 class SavedAddressModel {
   final String label;
@@ -230,9 +231,11 @@ class UserModel {
       email: _asString(json['email']) ?? '',
       phone: _asString(json['phone']) ?? '',
       role: role,
-      profilePhoto: _asString(json['avatarUrl']) ??
-          _asString(json['logoUrl']) ??
-          _asString(profileMap['avatar']),
+      profilePhoto: UrlUtils.normalizeMediaUrl(
+        _asString(json['avatarUrl']) ??
+            _asString(json['logoUrl']) ??
+            _asString(profileMap['avatar']),
+      ),
       address: _asString(addressMap['street']) ??
           (_asString(json['address']) != null && json['address'] is! Map
               ? _asString(json['address'])

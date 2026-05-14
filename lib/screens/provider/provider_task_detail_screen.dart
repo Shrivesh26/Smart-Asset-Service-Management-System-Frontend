@@ -869,15 +869,61 @@ class _ProviderTaskDetailScreenState extends State<ProviderTaskDetailScreen>
           _row('Extra Assets', _money(cost.additionalAssets)),
         if (b.additionalAssets.isNotEmpty) ...[
           const SizedBox(height: 6),
-          ...b.additionalAssets.map((asset) => _row(
-                asset['name']?.toString() ?? 'Extra asset',
-                _money((asset['price'] as num?)?.toDouble() ?? 0),
-              )),
+          _additionalAssetsList(b.additionalAssets),
         ],
         Divider(height: 18, color: _div),
         _row(cost.isFinal ? 'Final Total' : 'Estimated Total',
             _money(cost.total)),
       ]),
+    );
+  }
+
+  Widget _additionalAssetsList(List<Map<String, dynamic>> assets) {
+    return Column(
+      children: assets.map((asset) {
+        final name = asset['name']?.toString().trim();
+        final price = (asset['price'] as num?)?.toDouble() ?? 0;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppTheme.providerPrimary.withOpacity(_isDark ? 0.14 : 0.06),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.providerPrimary.withOpacity(0.14),
+            ),
+          ),
+          child: Row(children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: AppTheme.providerPrimary.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: const Icon(Icons.inventory_2_outlined,
+                  color: AppTheme.providerPrimary, size: 16),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                name?.isNotEmpty == true ? name! : 'Additional asset',
+                style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _txtP),
+              ),
+            ),
+            Text(_money(price),
+                style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: _txtP)),
+          ]),
+        );
+      }).toList(),
     );
   }
 

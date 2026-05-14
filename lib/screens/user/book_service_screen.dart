@@ -32,6 +32,7 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
 
   String? _selectedDate;
   String _selectedTime = AppConstants.timeSlots.first;
+  String _selectedAddressKey = 'new';
 
   // ── Theme helpers ──────────────────────────────────────────────────────
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
@@ -53,10 +54,17 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
     final user = auth.currentUser;
     _phoneCtrl.text = user?.phone ?? '';
     final saved = user?.savedAddresses ?? const [];
-    final defaultMatches = saved.where((address) => address.isDefault).toList();
-    final defaultAddress =
-        defaultMatches.isNotEmpty ? defaultMatches.first : (saved.isNotEmpty ? saved.first : null);
-    _addressCtrl.text = defaultAddress?.display ?? user?.address ?? '';
+    final defaultIndex = saved.indexWhere((address) => address.isDefault);
+    final selectedIndex =
+        defaultIndex != -1 ? defaultIndex : (saved.isNotEmpty ? 0 : -1);
+    final profileAddress = _profileAddressDisplay(auth);
+    if (selectedIndex != -1) {
+      _selectedAddressKey = 'saved:$selectedIndex';
+      _addressCtrl.text = saved[selectedIndex].display;
+    } else if (profileAddress.isNotEmpty) {
+      _selectedAddressKey = 'profile';
+      _addressCtrl.text = profileAddress;
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final storeId = widget.storeId;
@@ -113,7 +121,7 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
 
     final auth = context.read<AuthService>();
     final bookingSvc = context.read<BookingService>();
-    final service = _selectedServiceModel;
+    final service = _selectedServiceModel(context.read<ServiceCatalogService>());
     final user = auth.currentUser!;
 
     if (service == null) {
@@ -219,8 +227,7 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
     ));
   }
 
-  ServiceModel? get _selectedServiceModel {
-    final svc = context.read<ServiceCatalogService>();
+  ServiceModel? _selectedServiceModel(ServiceCatalogService svc) {
     final services =
         svc.storeServices.isNotEmpty ? svc.storeServices : svc.services;
     if (services.isEmpty) return null;
@@ -231,16 +238,40 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
     }
   }
 
+  String _profileAddressDisplay(AuthService auth) {
+    final user = auth.currentUser;
+    final parts = [
+      user?.address,
+      user?.city,
+      user?.state,
+      user?.pincode,
+      user?.country,
+    ]
+        .where((part) => part != null && part.trim().isNotEmpty)
+        .map((part) => part!.trim())
+        .toList();
+    return parts.join(', ');
+  }
+
   @override
   Widget build(BuildContext context) {
-    final service = _selectedServiceModel;
+    final catalog = context.watch<ServiceCatalogService>();
+    final service = _selectedServiceModel(catalog);
 
     return Scaffold(
       backgroundColor: _surface,
       body: Column(children: [
         _buildHeader(),
         Expanded(
-          child: SingleChildScrollView(
+          child: catalog.isLoading && service == null
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: AppTheme.userPrimary,
+                  ),
+                )
+              : catalog.error != null && service == null
+                  ? _buildLoadError(catalog.error!)
+                  : SingleChildScrollView(
             padding: const EdgeInsets.all(18),
             child: Form(
               key: _formKey,
@@ -269,13 +300,16 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _savedAddressPicker(),
-                        if ((context
+                        if (((context
                                     .watch<AuthService>()
                                     .currentUser
                                     ?.savedAddresses
                                     .isNotEmpty ??
-                                false))
+                                false) ||
+                            _profileAddressDisplay(context.read<AuthService>())
+                                .isNotEmpty))
                           const SizedBox(height: 12),
+                        _addressModeHint(),
                         _buildTextField(
                           controller: _addressCtrl,
                           hint: 'Enter your full address',
@@ -351,6 +385,50 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
   }
 
   // ── Header ─────────────────────────────────────────────────────────────
+  Widget _buildLoadError(String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.cloud_off_outlined,
+              color: AppTheme.statusInactive,
+              size: 40,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _txtP,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 14),
+            OutlinedButton.icon(
+              onPressed: () {
+                if (widget.storeId.isNotEmpty) {
+                  context
+                      .read<ServiceCatalogService>()
+                      .fetchServicesForStore(widget.storeId);
+                } else {
+                  context
+                      .read<ServiceCatalogService>()
+                      .fetchMarketplaceServices();
+                }
+              },
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildHeader() {
     return Container(
       decoration: BoxDecoration(
@@ -487,30 +565,139 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
   }
 
   Widget _savedAddressPicker() {
-    final addresses =
-        context.watch<AuthService>().currentUser?.savedAddresses ?? const [];
-    if (addresses.isEmpty) return const SizedBox.shrink();
+    final user = context.watch<AuthService>().currentUser;
+    final addresses = user?.savedAddresses ?? const [];
+    final profileAddress = [
+      user?.address,
+      user?.city,
+      user?.state,
+      user?.pincode,
+      user?.country,
+    ]
+        .where((part) => part != null && part.trim().isNotEmpty)
+        .map((part) => part!.trim())
+        .join(', ');
+
+    final options = <Map<String, String>>[
+      if (profileAddress.isNotEmpty)
+        {
+          'key': 'profile',
+          'label': 'Present address',
+          'value': profileAddress,
+        },
+      ...addresses.asMap().entries.map((entry) => {
+            'key': 'saved:${entry.key}',
+            'label': entry.value.label,
+            'value': entry.value.display,
+          }),
+      {
+        'key': 'new',
+        'label': 'New address',
+        'value': '',
+      },
+    ];
+
+    if (options.length <= 1) return const SizedBox.shrink();
+
+    final selectedKey = options.any((item) => item['key'] == _selectedAddressKey)
+        ? _selectedAddressKey
+        : options.first['key']!;
 
     return DropdownButtonFormField<String>(
-      value: null,
+      value: selectedKey,
       dropdownColor: _card,
-      // decoration: _deco('Choose a saved address', icon: Icons.bookmark_outline),
-      items: addresses
-          .map(
-            (address) => DropdownMenuItem(
-              value: address.display,
-              child: Text(
-                '${address.label} - ${address.display}',
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 13, color: _txtP),
+      style: TextStyle(color: _txtP, fontSize: 13),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: _fill,
+        prefixIcon: const Icon(Icons.bookmark_outline_rounded,
+            color: AppTheme.userPrimary, size: 20),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: _border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: _border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide:
+              const BorderSide(color: AppTheme.userPrimary, width: 1.5),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      ),
+      items: options.map((option) {
+        final isNew = option['key'] == 'new';
+        final display = isNew
+            ? 'Add a new address below'
+            : '${option['label']} - ${option['value']}';
+        return DropdownMenuItem(
+          value: option['key'],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isNew
+                    ? Icons.add_location_alt_outlined
+                    : Icons.location_on_outlined,
+                color: AppTheme.userPrimary,
+                size: 16,
               ),
-            ),
-          )
-          .toList(),
+              const SizedBox(width: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Text(
+                  display,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 13, color: _txtP),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
       onChanged: (value) {
         if (value == null) return;
-        _addressCtrl.text = value;
+        final selected = options.firstWhere((item) => item['key'] == value);
+        setState(() {
+          _selectedAddressKey = value;
+          if (value == 'new') {
+            _addressCtrl.clear();
+          } else {
+            _addressCtrl.text = selected['value'] ?? '';
+          }
+        });
       },
+    );
+  }
+
+  Widget _addressModeHint() {
+    if (_selectedAddressKey != 'new') return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: AppTheme.userPrimary.withOpacity(_isDark ? 0.14 : 0.06),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.userPrimary.withOpacity(0.12)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.edit_location_alt_outlined,
+                color: AppTheme.userPrimary, size: 17),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Enter the address where the service should be completed.',
+                style: TextStyle(fontSize: 12, color: _txtS, height: 1.35),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

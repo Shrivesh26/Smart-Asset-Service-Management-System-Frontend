@@ -19,6 +19,7 @@ class _AdminTenantsScreenState extends State<AdminTenantsScreen>
   List<_TenantModel> _allTenants = [];
   List<_TenantModel> _filtered = [];
   bool _isLoading = true;
+  String? _error;
   late AnimationController _animController;
 
   @override
@@ -42,20 +43,32 @@ class _AdminTenantsScreenState extends State<AdminTenantsScreen>
   Future<void> _loadTenants() async {
     setState(() => _isLoading = true);
     try {
-      // Replace with your actual API call:
-      // final res = await context.read<ApiService>().getTenants();
-      await Future.delayed(const Duration(milliseconds: 800)); // simulate
-      final mock = _mockTenants();
+      final res = await context.read<ApiService>().getTenants();
+      final list = res['data'] as List<dynamic>? ?? const [];
+      final tenants = list
+          .whereType<Map>()
+          .map((item) => _TenantModel.fromJson(Map<String, dynamic>.from(item)))
+          .toList();
       if (!mounted) return;
       setState(() {
-        _allTenants = mock;
+        _allTenants = tenants;
+        _error = null;
         _isLoading = false;
       });
       _applyFilter();
       _animController.forward(from: 0);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.message;
+        _isLoading = false;
+      });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _isLoading = false);
+      setState(() {
+        _error = 'Failed to load tenants.';
+        _isLoading = false;
+      });
     }
   }
 
@@ -93,6 +106,8 @@ class _AdminTenantsScreenState extends State<AdminTenantsScreen>
           Expanded(
             child: _isLoading
                 ? _buildSkeletonList()
+                : _error != null
+                    ? _buildErrorState()
                 : _filtered.isEmpty
                     ? _buildEmptyState()
                     : RefreshIndicator(
@@ -369,7 +384,7 @@ class _AdminTenantsScreenState extends State<AdminTenantsScreen>
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: () {},
+                          onPressed: () => _showTenantDetails(tenant),
                           icon: const Icon(Icons.open_in_new_rounded, size: 14),
                           label: const Text('View Details',
                               style: TextStyle(fontFamily: 'Poppins', fontSize: 12)),
@@ -531,6 +546,51 @@ class _AdminTenantsScreenState extends State<AdminTenantsScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppTheme.statusInactive.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.cloud_off_outlined,
+                  color: AppTheme.statusInactive, size: 36),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              _error ?? 'Failed to load tenants.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: _loadTenants,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Retry',
+                  style: TextStyle(fontFamily: 'Poppins')),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.adminPrimary,
+                side: const BorderSide(color: AppTheme.adminPrimary),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -722,19 +782,23 @@ class _AdminTenantsScreenState extends State<AdminTenantsScreen>
             child: Icon(icon, color: AppTheme.adminPrimary, size: 18),
           ),
           const SizedBox(width: 12),
-          Column(
+          Expanded(
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label,
                   style: const TextStyle(
                       fontFamily: 'Poppins', fontSize: 11, color: AppTheme.textSecondary)),
               Text(value,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
                   style: const TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textPrimary)),
             ],
+            ),
           ),
         ],
       ),
@@ -772,25 +836,43 @@ class _AdminTenantsScreenState extends State<AdminTenantsScreen>
                       color: AppTheme.textPrimary)),
             ),
             const SizedBox(height: 12),
-            ...[
-              (Icons.edit_rounded, 'Edit Tenant', AppTheme.adminPrimary),
-              (Icons.people_rounded, 'Manage Users', AppTheme.tenantPrimary),
-              (tenant.status == 'active'
-                  ? Icons.block_rounded
-                  : Icons.check_circle_rounded,
-              tenant.status == 'active' ? 'Deactivate' : 'Activate',
-              tenant.status == 'active' ? Colors.orange : AppTheme.statusActive),
-              (Icons.delete_rounded, 'Delete Tenant', AppTheme.statusInactive),
-            ].map((opt) => ListTile(
-                  leading: Icon(opt.$1, color: opt.$3, size: 20),
-                  title: Text(opt.$2,
-                      style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: opt.$3)),
-                  onTap: () => Navigator.pop(context),
-                )),
+            ListTile(
+              leading: const Icon(Icons.open_in_new_rounded,
+                  color: AppTheme.adminPrimary, size: 20),
+              title: const Text('View Details',
+                  style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.adminPrimary)),
+              onTap: () {
+                Navigator.pop(context);
+                _showTenantDetails(tenant);
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                tenant.status == 'active'
+                    ? Icons.block_rounded
+                    : Icons.check_circle_rounded,
+                color: tenant.status == 'active'
+                    ? Colors.orange
+                    : AppTheme.statusActive,
+                size: 20,
+              ),
+              title: Text(tenant.status == 'active' ? 'Deactivate' : 'Activate',
+                  style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: tenant.status == 'active'
+                          ? Colors.orange
+                          : AppTheme.statusActive)),
+              onTap: () {
+                Navigator.pop(context);
+                _toggleTenantStatus(tenant);
+              },
+            ),
             const SizedBox(height: 12),
           ],
         ),
@@ -798,12 +880,40 @@ class _AdminTenantsScreenState extends State<AdminTenantsScreen>
     );
   }
 
+  Future<void> _toggleTenantStatus(_TenantModel tenant) async {
+    try {
+      if (tenant.status == 'active') {
+        await context.read<ApiService>().deleteTenant(tenant.id);
+      } else {
+        await context
+            .read<ApiService>()
+            .updateTenant(tenant.id, {'isActive': true});
+      }
+      await _loadTenants();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message), backgroundColor: AppTheme.statusInactive),
+      );
+    }
+  }
+
   void _showAddTenantSheet() {
+    final firstNameCtrl = TextEditingController();
+    final lastNameCtrl = TextEditingController();
+    final companyCtrl = TextEditingController();
+    final emailCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+    final domainCtrl = TextEditingController();
+    final passwordCtrl = TextEditingController();
+    var businessType = 'other';
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => Padding(
+      builder: (_) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: Container(
           decoration: const BoxDecoration(
@@ -833,16 +943,72 @@ class _AdminTenantsScreenState extends State<AdminTenantsScreen>
                 ],
               ),
               const SizedBox(height: 16),
-              _formField('Company Name', Icons.apartment_rounded),
+              Row(children: [
+                Expanded(child: _formField('First Name', Icons.person_outline, controller: firstNameCtrl)),
+                const SizedBox(width: 10),
+                Expanded(child: _formField('Last Name', Icons.person_outline, controller: lastNameCtrl)),
+              ]),
               const SizedBox(height: 14),
-              _formField('Contact Email', Icons.email_outlined),
+              _formField('Company Name', Icons.apartment_rounded, controller: companyCtrl),
               const SizedBox(height: 14),
-              _formField('Domain', Icons.language_rounded),
+              _formField('Contact Email', Icons.email_outlined, controller: emailCtrl),
+              const SizedBox(height: 14),
+              _formField('Phone', Icons.call_outlined, controller: phoneCtrl),
+              const SizedBox(height: 14),
+              _formField('Subdomain', Icons.language_rounded, controller: domainCtrl),
+              const SizedBox(height: 14),
+              DropdownButtonFormField<String>(
+                value: businessType,
+                decoration: _fieldDecoration('Business Type', Icons.category_outlined),
+                items: const [
+                  'other',
+                  'home services',
+                  'repair & maintenance',
+                  'cleaning services',
+                  'automotive',
+                  'salon',
+                  'clinic',
+                ]
+                    .map((type) => DropdownMenuItem(
+                          value: type,
+                          child: Text(type,
+                              style: const TextStyle(fontFamily: 'Poppins')),
+                        ))
+                    .toList(),
+                onChanged: (value) => setSheetState(
+                  () => businessType = value ?? 'other',
+                ),
+              ),
+              const SizedBox(height: 14),
+              _formField('Temporary Password', Icons.lock_outline, controller: passwordCtrl),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () async {
+                    final api = context.read<ApiService>();
+                    try {
+                      await api.createTenant({
+                        'firstName': firstNameCtrl.text.trim(),
+                        'lastName': lastNameCtrl.text.trim(),
+                        'businessName': companyCtrl.text.trim(),
+                        'email': emailCtrl.text.trim(),
+                        'phone': phoneCtrl.text.trim(),
+                        'subdomain': domainCtrl.text.trim().toLowerCase(),
+                        'password': passwordCtrl.text.trim(),
+                        'businessType': businessType,
+                      });
+                      if (!mounted) return;
+                      Navigator.pop(context);
+                      await _loadTenants();
+                    } on ApiException catch (e) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(e.message),
+                        backgroundColor: AppTheme.statusInactive,
+                      ));
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.adminPrimary,
                     foregroundColor: Colors.white,
@@ -860,28 +1026,47 @@ class _AdminTenantsScreenState extends State<AdminTenantsScreen>
           ),
         ),
       ),
+      ),
+    ).whenComplete(() {
+      firstNameCtrl.dispose();
+      lastNameCtrl.dispose();
+      companyCtrl.dispose();
+      emailCtrl.dispose();
+      phoneCtrl.dispose();
+      domainCtrl.dispose();
+      passwordCtrl.dispose();
+    });
+  }
+
+  InputDecoration _fieldDecoration(String hint, IconData icon) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle:
+          const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: AppTheme.textSecondary),
+      prefixIcon: Icon(icon, color: AppTheme.adminPrimary, size: 20),
+      filled: true,
+      fillColor: AppTheme.surface,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppTheme.adminPrimary, width: 1.5),
+      ),
     );
   }
 
-  Widget _formField(String hint, IconData icon) {
+  Widget _formField(
+    String hint,
+    IconData icon, {
+    required TextEditingController controller,
+  }) {
     return TextField(
+      controller: controller,
+      obscureText: hint.toLowerCase().contains('password'),
       style: const TextStyle(fontFamily: 'Poppins', fontSize: 14),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle:
-            const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: AppTheme.textSecondary),
-        prefixIcon: Icon(icon, color: AppTheme.adminPrimary, size: 20),
-        filled: true,
-        fillColor: AppTheme.surface,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.adminPrimary, width: 1.5),
-        ),
-      ),
+      decoration: _fieldDecoration(hint, icon),
     );
   }
 
@@ -897,69 +1082,6 @@ class _AdminTenantsScreenState extends State<AdminTenantsScreen>
         return (AppTheme.textSecondary, status);
     }
   }
-
-  List<_TenantModel> _mockTenants() => [
-        _TenantModel(
-          id: '1',
-          name: 'Acme Corporation',
-          email: 'admin@acme.com',
-          domain: 'acme.platform.io',
-          status: 'active',
-          userCount: 142,
-          bookings: 834,
-          joinedDate: 'Jan 2024',
-          plan: 'Enterprise',
-          color: AppTheme.tenantPrimary,
-        ),
-        _TenantModel(
-          id: '2',
-          name: 'TechVentures Ltd',
-          email: 'ops@techventures.io',
-          domain: 'techventures.platform.io',
-          status: 'active',
-          userCount: 87,
-          bookings: 412,
-          joinedDate: 'Mar 2024',
-          plan: 'Pro',
-          color: const Color(0xFF7C3AED),
-        ),
-        _TenantModel(
-          id: '3',
-          name: 'Global Health Co',
-          email: 'admin@globalhealth.co',
-          domain: 'globalhealth.platform.io',
-          status: 'pending',
-          userCount: 12,
-          bookings: 0,
-          joinedDate: 'Apr 2025',
-          plan: 'Starter',
-          color: Colors.teal,
-        ),
-        _TenantModel(
-          id: '4',
-          name: 'RetailPlus Inc',
-          email: 'tech@retailplus.com',
-          domain: 'retailplus.platform.io',
-          status: 'inactive',
-          userCount: 56,
-          bookings: 220,
-          joinedDate: 'Aug 2023',
-          plan: 'Pro',
-          color: Colors.orange,
-        ),
-        _TenantModel(
-          id: '5',
-          name: 'Nova Solutions',
-          email: 'hello@novasolutions.io',
-          domain: 'nova.platform.io',
-          status: 'active',
-          userCount: 33,
-          bookings: 156,
-          joinedDate: 'Nov 2024',
-          plan: 'Starter',
-          color: Colors.indigo,
-        ),
-      ];
 }
 
 class _TenantModel {
@@ -979,6 +1101,53 @@ class _TenantModel {
     required this.plan,
     required this.color,
   });
+
+  factory _TenantModel.fromJson(Map<String, dynamic> json) {
+    final business = json['business'] is Map
+        ? Map<String, dynamic>.from(json['business'] as Map)
+        : const <String, dynamic>{};
+    final address = json['address'] is Map
+        ? Map<String, dynamic>.from(json['address'] as Map)
+        : const <String, dynamic>{};
+    String text(dynamic value) => value?.toString().trim() ?? '';
+    final firstName = text(json['firstName']);
+    final lastName = text(json['lastName']);
+    final businessName = text(json['businessName']);
+    final subdomain = text(json['subdomain']);
+    final joined = DateTime.tryParse(text(json['createdAt']));
+    final months = const [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return _TenantModel(
+      id: text(json['_id'] ?? json['id']),
+      name: businessName.isNotEmpty
+          ? businessName
+          : '$firstName $lastName'.trim().isNotEmpty
+              ? '$firstName $lastName'.trim()
+              : subdomain,
+      email: text(json['email']),
+      domain: subdomain.isNotEmpty ? subdomain : '-',
+      status: json['isActive'] == false ? 'inactive' : 'active',
+      userCount: int.tryParse(text(json['userCount'])) ?? 0,
+      bookings: int.tryParse(text(json['bookings'])) ?? 0,
+      joinedDate: joined == null
+          ? '-'
+          : '${months[joined.month - 1]} ${joined.year}',
+      plan: text(business['type']).isNotEmpty ? text(business['type']) : 'Tenant',
+      color: AppTheme.tenantPrimary,
+    );
+  }
 
   String get initials {
     final parts = name.trim().split(' ');

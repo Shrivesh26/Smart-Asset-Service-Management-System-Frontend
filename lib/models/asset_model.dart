@@ -1,3 +1,5 @@
+import '../utils/url_utils.dart';
+
 class AssetModel {
   final String id;
   final String tenantId;
@@ -76,10 +78,13 @@ class AssetModel {
           }
           return item?.toString() ?? '';
         })
+        .map(UrlUtils.normalizeMediaUrl)
+        .whereType<String>()
         .where((url) => url.isNotEmpty)
         .toList();
 
-    final fallbackImageUrl = json['imageUrl']?.toString();
+    final fallbackImageUrl =
+        UrlUtils.normalizeMediaUrl(json['imageUrl']?.toString());
     if (fallbackImageUrl != null && fallbackImageUrl.isNotEmpty) {
       imageUrls.insert(0, fallbackImageUrl);
     }

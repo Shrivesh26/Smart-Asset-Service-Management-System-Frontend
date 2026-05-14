@@ -264,7 +264,6 @@ class ApiService {
       });
 
       final response = await _dio.post<Map<String, dynamic>>(
-        // 'http://localhost:3000/uploads',
         '$baseUrl/uploads',
         data: formData,
         options: Options(
@@ -812,6 +811,25 @@ class ApiService {
 
   Future<Map<String, dynamic>> getStoreById(String id) async {
     return get('/tenants/$id');
+  }
+
+  Future<Map<String, dynamic>> getTenants() async {
+    return get('/tenants');
+  }
+
+  Future<Map<String, dynamic>> createTenant(Map<String, dynamic> data) async {
+    return post('/tenants', data);
+  }
+
+  Future<Map<String, dynamic>> updateTenant(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    return patch('/tenants/$id', data);
+  }
+
+  Future<Map<String, dynamic>> deleteTenant(String id) async {
+    return delete('/tenants/$id');
   }
 
   // ═══════════════════════════════════════════════════════════════════

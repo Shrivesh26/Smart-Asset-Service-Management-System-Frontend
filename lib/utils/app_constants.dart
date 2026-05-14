@@ -1,12 +1,19 @@
+import 'package:flutter/foundation.dart';
+
 class AppConstants {
   // ── App Info ────────────────────────────────────────────────────────
   static const String appName = 'SmartAsset';
   static const String appVersion = '1.0.0';
 
   // ── API Base URL ────────────────────────────────────────────────────
-  // Replace with your actual backend URL
-  // static const String baseUrl = 'http://localhost:3000/api/v1';
-  static const String baseUrl = 'https://smart-asset-service-management-system.onrender.com/api/v1';
+  static const String _configuredBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+  );
+  static String get baseUrl => _configuredBaseUrl.isNotEmpty
+      ? _configuredBaseUrl
+      : kReleaseMode
+          ? 'https://smart-asset-service-management-system.onrender.com/api/v1'
+          : 'http://localhost:3000/api/v1';
 
   // ── SharedPreferences Keys ──────────────────────────────────────────
   static const String keyToken = 'auth_token';

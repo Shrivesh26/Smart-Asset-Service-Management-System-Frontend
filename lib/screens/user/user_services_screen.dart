@@ -6,7 +6,7 @@ import '../../models/service_model.dart';
 import '../../services/service_catalog_service.dart';
 import '../../utils/app_routes.dart';
 import '../../utils/app_theme.dart';
-import '../../widgets/user/marketplace_service_card.dart';
+import 'marketplace_service_card.dart';
 
 class UserServicesScreen extends StatefulWidget {
   final String storeId;

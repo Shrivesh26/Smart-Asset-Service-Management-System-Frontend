@@ -157,7 +157,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
   // ── Wide layout (large tablet / desktop) ──────────────────────────────
   Widget _buildWideLayout(
   BookingService bookingSvc,
-  ServiceCatalogService serviceSvc,
+  ServiceCatalogService serviceSvc, 
 ) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,

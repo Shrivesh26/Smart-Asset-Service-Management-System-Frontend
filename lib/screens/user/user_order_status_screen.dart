@@ -59,12 +59,7 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
 
     // Gate 2: must be before provider assignment (steps 0 or 1 only)
     final step = _stepFor(b);
-    if (step >= 2) return false;
-
-    // Gate 3: the service must allow cancellation before assignment
-    // BookingModel exposes this via allowCancellationBeforeAssign
-    // (mirrors ServiceModel.allowCancellationBeforeAssign stored on booking)
-    if (!(b.allowCancellationBeforeAssign ?? true)) return false;
+    if (step > 1 || b.hasProvider) return false;
 
     return true;
   }
@@ -817,17 +812,81 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
           ),
         if (cost.additionalAssets > 0)
           _infoRow('Extra Assets', _money(cost.additionalAssets)),
-        if (b.additionalAssets.isNotEmpty)
-          ...b.additionalAssets.map((asset) => _infoRow(
-                asset['name']?.toString() ?? 'Extra asset',
-                _money((asset['price'] as num?)?.toDouble() ?? 0),
-              )),
+        if (b.additionalAssets.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          _additionalAssetsList(b.additionalAssets),
+        ],
         Divider(height: 18, color: _div),
         _infoRow(
           cost.isFinal ? 'Final Total' : 'Estimated Total',
           _money(cost.total),
         ),
       ],
+    );
+  }
+
+  Widget _additionalAssetsList(List<Map<String, dynamic>> assets) {
+    return Column(
+      children: assets.map((asset) {
+        final name = asset['name']?.toString().trim();
+        final price = (asset['price'] as num?)?.toDouble() ?? 0;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppTheme.userPrimary.withOpacity(_isDark ? 0.12 : 0.06),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.userPrimary.withOpacity(0.12),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: AppTheme.userPrimary.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: const Icon(
+                  Icons.add_business_outlined,
+                  color: AppTheme.userPrimary,
+                  size: 16,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name?.isNotEmpty == true ? name! : 'Additional asset',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: _txtP,
+                      ),
+                    ),
+                    Text(
+                      'Added during service',
+                      style: TextStyle(fontSize: 11, color: _txtS),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                _money(price),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: _txtP,
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 
