@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -18,32 +17,29 @@ class UserEditProfileScreen extends StatefulWidget {
 }
 
 class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameCtrl = TextEditingController();
-  final _phoneCtrl = TextEditingController();
+  final _formKey    = GlobalKey<FormState>();
+  final _nameCtrl   = TextEditingController();
+  final _phoneCtrl  = TextEditingController();
   final _addressCtrl = TextEditingController();
-  final _cityCtrl = TextEditingController();
-  final _stateCtrl = TextEditingController();
-  final _pinCtrl = TextEditingController();
+  final _cityCtrl   = TextEditingController();
+  final _stateCtrl  = TextEditingController();
+  final _pinCtrl    = TextEditingController();
 
-  // ── Image state ─────────────────────────────────────────────────────────
-  // _previewBytes → used for display via MemoryImage (no _namespace errors)
-  // _selectedImageFile → passed to uploadProfileImage
-  File? _selectedImageFile;
+  // ── Image state (web-safe: no dart:io File) ─────────────────────────
+  XFile?     _pickedXFile;
   Uint8List? _previewBytes;
 
   bool _loading = false;
 
-  // ── Theme helpers ───────────────────────────────────────────────────────
-  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  // ── Theme helpers ───────────────────────────────────────────────────
+  bool  get _isDark  => Theme.of(context).brightness == Brightness.dark;
   Color get _surface =>
       _isDark ? AppTheme.darkBackground : const Color(0xFFF4F7F5);
-  Color get _card => _isDark ? AppTheme.darkCard : Colors.white;
-  Color get _txtP =>
-      _isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
-  Color get _txtS =>
+  Color get _card   => _isDark ? AppTheme.darkCard : Colors.white;
+  Color get _txtP   => _isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
+  Color get _txtS   =>
       _isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary;
-  Color get _fill => _isDark ? AppTheme.darkInput : Colors.grey.shade50;
+  Color get _fill   => _isDark ? AppTheme.darkInput : Colors.grey.shade50;
   Color get _border =>
       _isDark ? AppTheme.darkDivider : AppTheme.dividerColor;
 
@@ -51,12 +47,12 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
   void initState() {
     super.initState();
     final user = context.read<AuthService>().currentUser;
-    _nameCtrl.text = user?.fullName ?? '';
-    _phoneCtrl.text = user?.phone ?? '';
+    _nameCtrl.text    = user?.fullName ?? '';
+    _phoneCtrl.text   = user?.phone ?? '';
     _addressCtrl.text = user?.address ?? '';
-    _cityCtrl.text = user?.city ?? '';
-    _stateCtrl.text = user?.state ?? '';
-    _pinCtrl.text = user?.pincode ?? '';
+    _cityCtrl.text    = user?.city ?? '';
+    _stateCtrl.text   = user?.state ?? '';
+    _pinCtrl.text     = user?.pincode ?? '';
   }
 
   @override
@@ -70,8 +66,7 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
     super.dispose();
   }
 
-  // ── Resolved image provider ─────────────────────────────────────────────
-  // Priority: locally picked bytes → server URL → null (shows initials)
+  // ── Resolved avatar provider ────────────────────────────────────────
   ImageProvider<Object>? get _imageProvider {
     if (_previewBytes != null) return MemoryImage(_previewBytes!);
     final url = context.read<AuthService>().currentUser?.profilePhoto;
@@ -79,7 +74,7 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
     return null;
   }
 
-  // ── Pick image ──────────────────────────────────────────────────────────
+  // ── Pick image ──────────────────────────────────────────────────────
   Future<void> _pickImage() async {
     final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
@@ -88,18 +83,15 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
     );
     if (picked == null) return;
 
-    // Read raw bytes immediately — this avoids _namespace / content-URI
-    // permission errors that occur when using dart:io File on Android
-    // gallery URIs (content:// scheme cannot be opened as a File path).
+    // readAsBytes() works on mobile, web, and desktop — no dart:io needed
     final bytes = await picked.readAsBytes();
-
     setState(() {
-      _selectedImageFile = File(picked.path); // upload only
-      _previewBytes = bytes;                  // display only
+      _pickedXFile  = picked;
+      _previewBytes = bytes;
     });
   }
 
-  // ── Save ────────────────────────────────────────────────────────────────
+  // ── Save ────────────────────────────────────────────────────────────
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
@@ -108,17 +100,22 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
 
       final data = <String, dynamic>{
         'fullName': _nameCtrl.text.trim(),
-        'phone': _phoneCtrl.text.trim(),
+        'phone':    _phoneCtrl.text.trim(),
         'address': {
-          'street': _addressCtrl.text.trim(),
-          'city': _cityCtrl.text.trim(),
-          'state': _stateCtrl.text.trim(),
+          'street':  _addressCtrl.text.trim(),
+          'city':    _cityCtrl.text.trim(),
+          'state':   _stateCtrl.text.trim(),
           'pinCode': _pinCtrl.text.trim(),
         },
       };
 
-      if (_selectedImageFile != null) {
-        final url = await auth.uploadProfileImage(_selectedImageFile!);
+      // ✅ Pass bytes + filename; uploadProfileImage no longer takes File
+      if (_previewBytes != null && _pickedXFile != null) {
+        final imageName = _pickedXFile!.name.isNotEmpty
+            ? _pickedXFile!.name
+            : 'profile.jpg';
+        final url =
+            await auth.uploadUserProfileImage(_previewBytes!, imageName);
         if (url != null) data['avatarUrl'] = url;
       }
 
@@ -130,8 +127,7 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
         content: const Text('Profile updated successfully'),
         backgroundColor: AppTheme.statusCompleted,
         behavior: SnackBarBehavior.floating,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ));
       context.pop();
     } catch (e) {
@@ -140,15 +136,14 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
         content: Text('Error: $e'),
         backgroundColor: AppTheme.statusInactive,
         behavior: SnackBarBehavior.floating,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  // ── Build ───────────────────────────────────────────────────────────────
+  // ── Build ───────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthService>().currentUser;
@@ -223,7 +218,6 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
     );
   }
 
-  // ── Header ──────────────────────────────────────────────────────────────
   Widget _buildHeader() {
     return Container(
       decoration: BoxDecoration(
@@ -249,12 +243,12 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                 children: [
                   Text('Edit Profile',
                       style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                      )),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white)),
                   Text('Update your personal information',
-                      style: TextStyle(fontSize: 12, color: Colors.white70)),
+                      style:
+                          TextStyle(fontSize: 12, color: Colors.white70)),
                 ],
               ),
             ),
@@ -264,7 +258,6 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
     );
   }
 
-  // ── Avatar card ─────────────────────────────────────────────────────────
   Widget _buildAvatarCard(dynamic user) {
     final provider = _imageProvider;
 
@@ -275,10 +268,9 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(_isDark ? 0.2 : 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
+              color: Colors.black.withOpacity(_isDark ? 0.2 : 0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4)),
         ],
       ),
       child: Column(children: [
@@ -301,8 +293,8 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                       ? Image(
                           image: provider,
                           fit: BoxFit.cover,
-                          // Graceful fallback on broken URL / permission error
-                          errorBuilder: (_, __, ___) => _initialsWidget(user),
+                          errorBuilder: (_, __, ___) =>
+                              _initialsWidget(user),
                         )
                       : _initialsWidget(user),
                 ),
@@ -349,22 +341,18 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
     );
   }
 
-  Widget _initialsWidget(dynamic user) {
-    return Container(
-      color: AppTheme.userPrimary.withOpacity(0.12),
-      alignment: Alignment.center,
-      child: Text(
-        user?.initials ?? 'U',
-        style: const TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.w700,
-          color: AppTheme.userPrimary,
+  Widget _initialsWidget(dynamic user) => Container(
+        color: AppTheme.userPrimary.withOpacity(0.12),
+        alignment: Alignment.center,
+        child: Text(
+          user?.initials ?? 'U',
+          style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.userPrimary),
         ),
-      ),
-    );
-  }
+      );
 
-  // ── Section ─────────────────────────────────────────────────────────────
   Widget _buildSection(String title, IconData icon, List<Widget> children) {
     return Container(
       width: double.infinity,
@@ -374,10 +362,9 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(_isDark ? 0.2 : 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
+              color: Colors.black.withOpacity(_isDark ? 0.2 : 0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4)),
         ],
       ),
       child:
@@ -387,7 +374,8 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: AppTheme.userPrimary.withOpacity(_isDark ? 0.2 : 0.1),
+              color: AppTheme.userPrimary
+                  .withOpacity(_isDark ? 0.2 : 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: AppTheme.userPrimary, size: 17),
@@ -405,7 +393,6 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
     );
   }
 
-  // ── Field ───────────────────────────────────────────────────────────────
   Widget _field(
     String label,
     TextEditingController ctrl,
@@ -432,8 +419,8 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
             borderSide: BorderSide(color: _border)),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide:
-                const BorderSide(color: AppTheme.userPrimary, width: 1.5)),
+            borderSide: const BorderSide(
+                color: AppTheme.userPrimary, width: 1.5)),
         errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: const BorderSide(

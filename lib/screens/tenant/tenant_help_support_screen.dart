@@ -198,11 +198,11 @@ class _TenantHelpSupportScreenState extends State<TenantHelpSupportScreen> {
       _ContactItem(
         icon: Icons.email_outlined,
         title: 'Email Support',
-        value: 'kashyapsam733@gmail.com',
+        value: 'support@gmail.com',
         actionLabel: 'Copy',
         onTap: () {
           Clipboard.setData(
-              const ClipboardData(text: 'kashyapsam733@gmail.com'));
+              const ClipboardData(text: 'support@gmail.com'));
           _showSnack('Email copied!', AppTheme.statusCompleted);
         },
       ),

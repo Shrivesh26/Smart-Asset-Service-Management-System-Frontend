@@ -117,7 +117,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                               fontSize: 13,
                               color: Colors.white.withOpacity(0.8))),
                           const SizedBox(height: 3),
-                          Text('${user?.fullName ?? 'Provider'} 👋',
+                          Text('${user?.fullName ?? 'Provider'}',
                               style: const TextStyle(fontFamily: 'Poppins',
                                   fontSize: 21, fontWeight: FontWeight.w700,
                                   color: Colors.white)),

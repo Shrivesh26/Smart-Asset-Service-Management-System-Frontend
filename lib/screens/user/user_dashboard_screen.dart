@@ -254,7 +254,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${user?.fullName?.split(' ').first ?? 'User'} 👋',
+                    '${user?.fullName?.split(' ').first ?? 'User'}',
                     style: TextStyle(
                       fontSize: _isTablet ? 30 : 26,
                       fontWeight: FontWeight.w800,

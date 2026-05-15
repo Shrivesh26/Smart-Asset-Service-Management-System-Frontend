@@ -1049,7 +1049,7 @@ class _ContactSheet extends StatelessWidget {
         ]),
         const SizedBox(height: 16),
         _contactRow(Icons.email_outlined, 'Email',
-            'kashyapsam733@gmail.com'),
+            'support@gmail.com'),
         const SizedBox(height: 10),
         _contactRow(Icons.phone_outlined, 'Phone', '+91 98000 00000'),
         const SizedBox(height: 10),

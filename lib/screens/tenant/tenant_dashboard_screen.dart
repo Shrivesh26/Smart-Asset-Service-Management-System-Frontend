@@ -172,7 +172,7 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen>
                         Text(greeting, style: TextStyle(fontFamily: 'Poppins',
                             fontSize: 13, color: Colors.white.withOpacity(0.8))),
                         const SizedBox(height: 3),
-                        Text('${user?.fullName ?? 'Tenant'} 👋',
+                        Text('${user?.fullName ?? 'Tenant'} ',
                             style: const TextStyle(fontFamily: 'Poppins',
                                 fontSize: 22, fontWeight: FontWeight.w700,
                                 color: Colors.white)),

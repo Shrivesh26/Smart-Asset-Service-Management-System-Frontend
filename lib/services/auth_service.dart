@@ -1,8 +1,7 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as _dio show post;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/admin_model.dart';
@@ -102,8 +101,6 @@ class AuthService extends ChangeNotifier {
       );
 
       final token = response['token'] as String? ?? '';
-
-      // ✅ FIX 1: API returns 'data' key, not 'user'
       final rawData =
           _readMap(response['data']) ?? _readMap(response['user']) ?? {};
 
@@ -116,9 +113,6 @@ class AuthService extends ChangeNotifier {
 
       final user = _parseRoleUser(rawData);
 
-      // ✅ FIX 2: Compare using normalized roles
-      // DB stores 'customer' for users but frontend uses 'user'
-      // DB stores 'service_provider' and frontend also uses 'service_provider'
       if (!_rolesMatch(user.role, role)) {
         _error = 'Invalid credentials for selected role.';
         _isLoading = false;
@@ -146,13 +140,10 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // ✅ FIX 3: Role matching handles DB aliases
-  // 'customer' == 'user', 'service_provider' == 'service_provider'
   bool _rolesMatch(String returnedRole, String expectedRole) {
     final r = returnedRole.toLowerCase().trim();
     final e = expectedRole.toLowerCase().trim();
     if (r == e) return true;
-    // DB alias: 'customer' is stored for users
     if (r == 'customer' && e == AppConstants.roleUser) return true;
     if (r == AppConstants.roleUser && e == 'customer') return true;
     return false;
@@ -238,25 +229,17 @@ class AuthService extends ChangeNotifier {
       _error = e.message;
       _isLoading = false;
       notifyListeners();
-      return {
-        'success': false,
-        'isProviderRole': false,
-        'message': e.message,
-      };
+      return {'success': false, 'isProviderRole': false, 'message': e.message};
     }
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  //  LOGOUT — set flag BEFORE clearing, notify ONCE at the end
+  //  LOGOUT
   // ═══════════════════════════════════════════════════════════════════
   Future<void> logout() async {
-    // ✅ Mark as logged out immediately so GoRouter redirect fires
-    // before anything else can try to read _currentUser
     _isLoggedIn = false;
     _currentUser = null;
-    notifyListeners(); // GoRouter redirect reacts here
-
-    // Clear prefs and API token in background — no await needed for UI
+    notifyListeners();
     try {
       await _api.logout();
     } catch (_) {}
@@ -273,16 +256,13 @@ class AuthService extends ChangeNotifier {
 
     try {
       final response = await _api.updateProfile(data);
-
       final rawData = _readMap(response['data']) ?? _readMap(response['user']);
 
-      // ✅ FIX: Only update if backend actually returns data
       if (rawData != null && rawData.isNotEmpty) {
         _currentUser = _parseRoleUser(rawData);
         await _prefs.setString(
             AppConstants.keyUserName, _currentUser!.fullName);
       } else {
-        // ✅ fallback: just refresh profile instead of wiping it
         await refreshProfile();
       }
 
@@ -346,7 +326,6 @@ class AuthService extends ChangeNotifier {
 
   UserModel _parseRoleUser(Map<String, dynamic> rawData) {
     final normalizedRole = UserModel.fromJson(rawData).role;
-
     switch (normalizedRole) {
       case AppConstants.roleAdmin:
         return AdminModel.fromJson(rawData);
@@ -360,14 +339,32 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Future<String?> uploadProfileImage(File file) async {
+  // ── Upload profile image  ──────────────────────────────────────────────
+  Future<String?> uploadTenantProfileImage(
+    Uint8List imageBytes,
+    String imageName,
+  ) async {
     try {
-      final bytes = await file.readAsBytes();
-      final imageName = file.path.split(RegExp(r'[\\/]')).last;
       final imageUrl = await _api.uploadTenantImage(
-        imageBytes: bytes,
-        imageName: imageName,
+        imageBytes: imageBytes,
+        imageName: imageName.isNotEmpty ? imageName : 'profile.jpg',
       );
+      return imageUrl;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<String?> uploadUserProfileImage(
+    Uint8List imageBytes,
+    String imageName,
+  ) async {
+    try {
+      final imageUrl = await _api.uploadUserImage(
+        imageBytes: imageBytes,
+        imageName: imageName.isNotEmpty ? imageName : 'user-profile.jpg',
+      );
+
       return imageUrl;
     } catch (e) {
       rethrow;

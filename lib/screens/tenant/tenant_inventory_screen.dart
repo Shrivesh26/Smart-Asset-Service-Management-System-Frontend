@@ -28,13 +28,20 @@ class _TenantInventoryScreenState extends State<TenantInventoryScreen>
   late final AnimationController _fabCtrl;
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
-  Color get _cardBg => _isDark ? const Color(0xFF1E1E1E) : Colors.white;
-  Color get _surface => _isDark ? const Color(0xFF121212) : AppTheme.surface;
-  Color get _txtP => _isDark ? Colors.white : AppTheme.textPrimary;
-  Color get _txtS => _isDark ? const Color(0xFF9E9E9E) : AppTheme.textSecondary;
-  Color get _txtH => _isDark ? const Color(0xFF616161) : AppTheme.textHint;
-  Color get _div => _isDark ? const Color(0xFF2D2D2D) : AppTheme.dividerColor;
-  Color get _inputBg => _isDark ? const Color(0xFF2A2A2A) : Colors.white;
+  Color get _cardBg =>
+      _isDark ? const Color(0xFF1E1E1E) : Colors.white;
+  Color get _surface =>
+      _isDark ? const Color(0xFF121212) : AppTheme.surface;
+  Color get _txtP =>
+      _isDark ? Colors.white : AppTheme.textPrimary;
+  Color get _txtS =>
+      _isDark ? const Color(0xFF9E9E9E) : AppTheme.textSecondary;
+  Color get _txtH =>
+      _isDark ? const Color(0xFF616161) : AppTheme.textHint;
+  Color get _div =>
+      _isDark ? const Color(0xFF2D2D2D) : AppTheme.dividerColor;
+  Color get _inputBg =>
+      _isDark ? const Color(0xFF2A2A2A) : Colors.white;
 
   @override
   void initState() {
@@ -63,11 +70,9 @@ class _TenantInventoryScreenState extends State<TenantInventoryScreen>
     var list = List<AssetModel>.from(all);
     if (_filter == 'Available') {
       list = list.where((a) => a.status.toLowerCase() == 'available').toList();
-    }
-    if (_filter == 'Assigned') {
+    } else if (_filter == 'Assigned') {
       list = list.where((a) => a.status.toLowerCase() == 'assigned').toList();
-    }
-    if (_filter == 'Maintenance') {
+    } else if (_filter == 'Maintenance') {
       list =
           list.where((a) => a.status.toLowerCase() == 'maintenance').toList();
     }
@@ -87,7 +92,8 @@ class _TenantInventoryScreenState extends State<TenantInventoryScreen>
         list.sort((a, b) => b.cost.compareTo(a.cost));
         break;
       case 'Qty':
-        list.sort((a, b) => b.quantityAvailable.compareTo(a.quantityAvailable));
+        list.sort(
+            (a, b) => b.quantityAvailable.compareTo(a.quantityAvailable));
         break;
       default:
         list.sort((a, b) => a.name.compareTo(b.name));
@@ -138,14 +144,10 @@ class _TenantInventoryScreenState extends State<TenantInventoryScreen>
               ? rawImageBytes.whereType<Uint8List>().toList()
               : <Uint8List>[];
           final imageNames = rawImageNames is List
-              ? rawImageNames.map((name) => name.toString()).toList()
+              ? rawImageNames.map((n) => n.toString()).toList()
               : <String>[];
-          await svc.updateAsset(
-            a.id,
-            data,
-            imageBytesList: imageBytes,
-            imageNames: imageNames,
-          );
+          await svc.updateAsset(a.id, data,
+              imageBytesList: imageBytes, imageNames: imageNames);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: const Text('Asset updated',
@@ -166,20 +168,22 @@ class _TenantInventoryScreenState extends State<TenantInventoryScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: _cardBg,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text('Delete Asset',
             style: TextStyle(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.w700,
                 color: _txtP)),
         content: Text('Delete "${a.name}"? This cannot be undone.',
-            style:
-                TextStyle(fontFamily: 'Poppins', fontSize: 14, color: _txtS)),
+            style: TextStyle(
+                fontFamily: 'Poppins', fontSize: 14, color: _txtS)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
               child: Text('Cancel',
-                  style: TextStyle(fontFamily: 'Poppins', color: _txtS))),
+                  style:
+                      TextStyle(fontFamily: 'Poppins', color: _txtS))),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
@@ -187,7 +191,8 @@ class _TenantInventoryScreenState extends State<TenantInventoryScreen>
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10))),
             child: const Text('Delete',
-                style: TextStyle(fontFamily: 'Poppins', color: Colors.white)),
+                style: TextStyle(
+                    fontFamily: 'Poppins', color: Colors.white)),
           ),
         ],
       ),
@@ -236,7 +241,8 @@ class _TenantInventoryScreenState extends State<TenantInventoryScreen>
         ),
       ]),
       floatingActionButton: ScaleTransition(
-        scale: CurvedAnimation(parent: _fabCtrl, curve: Curves.elasticOut),
+        scale:
+            CurvedAnimation(parent: _fabCtrl, curve: Curves.elasticOut),
         child: FloatingActionButton.extended(
           onPressed: () => context.go(AppRoutes.addAsset),
           backgroundColor: AppTheme.tenantPrimary,
@@ -303,8 +309,8 @@ class _TenantInventoryScreenState extends State<TenantInventoryScreen>
                   decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(12),
-                      border:
-                          Border.all(color: Colors.white.withOpacity(0.25))),
+                      border: Border.all(
+                          color: Colors.white.withOpacity(0.25))),
                   child: TextField(
                     controller: _searchCtrl,
                     onChanged: (v) => setState(() => _query = v),
@@ -313,32 +319,25 @@ class _TenantInventoryScreenState extends State<TenantInventoryScreen>
                         fontSize: 14,
                         color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: 'Search assets by name or skills...',
+                      hintText: 'Search assets by name or category...',
                       hintStyle: TextStyle(
                           fontFamily: 'Poppins',
                           fontSize: 14,
-                          color: _isDark
-                              ? Colors.white.withOpacity(0.5)
-                              : AppTheme.textSecondary),
-                      prefixIcon: Icon(Icons.search_rounded,
-                          color: _isDark
-                              ? Colors.white.withOpacity(0.8)
-                              : AppTheme.textSecondary,
-                          size: 20),
+                          color: Colors.white.withOpacity(0.5)),
+                      prefixIcon: const Icon(Icons.search_rounded,
+                          color: Colors.white70, size: 20),
                       suffixIcon: _query.isNotEmpty
                           ? IconButton(
-                              icon: Icon(Icons.close_rounded,
-                                  color: _isDark
-                                      ? Colors.white.withOpacity(0.8)
-                                      : AppTheme.textSecondary,
-                                  size: 18),
+                              icon: const Icon(Icons.close_rounded,
+                                  color: Colors.white70, size: 18),
                               onPressed: () {
                                 _searchCtrl.clear();
                                 setState(() => _query = '');
                               })
                           : null,
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      contentPadding:
+                          const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
                 )),
@@ -365,19 +364,24 @@ class _TenantInventoryScreenState extends State<TenantInventoryScreen>
                     style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 11,
-                        fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
-                        color: sel ? AppTheme.tenantPrimary : _txtS)),
+                        fontWeight:
+                            sel ? FontWeight.w600 : FontWeight.w400,
+                        color:
+                            sel ? AppTheme.tenantPrimary : _txtS)),
                 selected: sel,
                 onSelected: (_) => setState(() => _filter = f),
-                selectedColor:
-                    AppTheme.tenantLight.withOpacity(_isDark ? 0.25 : 1),
+                selectedColor: AppTheme.tenantLight
+                    .withOpacity(_isDark ? 0.25 : 1),
                 checkmarkColor: AppTheme.tenantPrimary,
-                backgroundColor:
-                    _isDark ? const Color(0xFF2A2A2A) : AppTheme.surface,
-                side: BorderSide(color: sel ? AppTheme.tenantPrimary : _div),
+                backgroundColor: _isDark
+                    ? const Color(0xFF2A2A2A)
+                    : AppTheme.surface,
+                side: BorderSide(
+                    color: sel ? AppTheme.tenantPrimary : _div),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20)),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 2),
                 visualDensity: VisualDensity.compact,
               ),
             );
@@ -387,7 +391,9 @@ class _TenantInventoryScreenState extends State<TenantInventoryScreen>
           height: 32,
           padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
-            color: _isDark ? const Color(0xFF2A2A2A) : AppTheme.surface,
+            color: _isDark
+                ? const Color(0xFF2A2A2A)
+                : AppTheme.surface,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: _div),
           ),
@@ -396,10 +402,13 @@ class _TenantInventoryScreenState extends State<TenantInventoryScreen>
             value: _sort,
             isDense: true,
             icon: Icon(Icons.sort_rounded, size: 14, color: _txtS),
-            dropdownColor: _isDark ? const Color(0xFF2A2A2A) : Colors.white,
-            style: TextStyle(fontFamily: 'Poppins', fontSize: 11, color: _txtP),
+            dropdownColor:
+                _isDark ? const Color(0xFF2A2A2A) : Colors.white,
+            style: TextStyle(
+                fontFamily: 'Poppins', fontSize: 11, color: _txtP),
             items: ['Name', 'Cost ↑', 'Cost ↓', 'Qty']
-                .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                .map((s) =>
+                    DropdownMenuItem(value: s, child: Text(s)))
                 .toList(),
             onChanged: (v) => setState(() => _sort = v!),
           )),
@@ -416,16 +425,23 @@ class _TenantInventoryScreenState extends State<TenantInventoryScreen>
         _pill('${svc.totalCount}', 'Total', AppTheme.textPrimary,
             _isDark ? const Color(0xFF2A2A2A) : AppTheme.surface),
         const SizedBox(width: 8),
-        _pill('${svc.availableCount}', 'Available', AppTheme.statusCompleted,
-            _isDark ? const Color(0xFF064E3B) : const Color(0xFFE8F5E9)),
+        _pill('${svc.availableCount}', 'Available',
+            AppTheme.statusCompleted,
+            _isDark
+                ? const Color(0xFF064E3B)
+                : const Color(0xFFE8F5E9)),
         const SizedBox(width: 8),
-        _pill('${svc.outOfStockCount}', 'Assigned', AppTheme.statusInactive,
-            _isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFFEBEE)),
+        _pill('${svc.outOfStockCount}', 'Assigned',
+            AppTheme.statusInactive,
+            _isDark
+                ? const Color(0xFF7F1D1D)
+                : const Color(0xFFFFEBEE)),
       ]),
     );
   }
 
-  Widget _pill(String n, String l, Color color, Color bg) => Expanded(
+  Widget _pill(String n, String l, Color color, Color bg) =>
+      Expanded(
           child: Container(
         padding: const EdgeInsets.symmetric(vertical: 9),
         decoration: BoxDecoration(
@@ -441,8 +457,10 @@ class _TenantInventoryScreenState extends State<TenantInventoryScreen>
                   color: color)),
           const SizedBox(height: 2),
           Text(l,
-              style:
-                  TextStyle(fontFamily: 'Poppins', fontSize: 10, color: _txtS)),
+              style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 10,
+                  color: _txtS)),
         ]),
       ));
 
@@ -467,7 +485,8 @@ class _TenantInventoryScreenState extends State<TenantInventoryScreen>
     );
   }
 
-  Widget _buildGrid(List<AssetModel> assets, double w, AssetService svc) {
+  Widget _buildGrid(
+      List<AssetModel> assets, double w, AssetService svc) {
     final cols = w > 600 ? 3 : 2;
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
@@ -498,13 +517,17 @@ class _TenantInventoryScreenState extends State<TenantInventoryScreen>
           margin: const EdgeInsets.only(bottom: 12),
           height: 90,
           decoration: BoxDecoration(
-              color: _cardBg, borderRadius: BorderRadius.circular(16))));
+              color: _cardBg,
+              borderRadius: BorderRadius.circular(16))));
 
   Widget _empty() => Center(
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
         Icon(Icons.inventory_2_outlined, size: 56, color: _txtH),
         const SizedBox(height: 16),
-        Text(_query.isNotEmpty ? 'No results' : 'No assets yet',
+        Text(
+            _query.isNotEmpty ? 'No results' : 'No assets yet',
             style: TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 16,
@@ -515,8 +538,10 @@ class _TenantInventoryScreenState extends State<TenantInventoryScreen>
             _query.isNotEmpty
                 ? 'Try a different search'
                 : 'Tap + Add Asset to get started',
-            style:
-                TextStyle(fontFamily: 'Poppins', fontSize: 13, color: _txtS)),
+            style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 13,
+                color: _txtS)),
         if (_query.isEmpty) ...[
           const SizedBox(height: 20),
           ElevatedButton.icon(
@@ -525,9 +550,10 @@ class _TenantInventoryScreenState extends State<TenantInventoryScreen>
                 backgroundColor: AppTheme.tenantPrimary,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12)),
-            icon: const Icon(Icons.add_rounded, color: Colors.white),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 12)),
+            icon:
+                const Icon(Icons.add_rounded, color: Colors.white),
             label: const Text('Add Asset',
                 style: TextStyle(
                     fontFamily: 'Poppins',
@@ -536,6 +562,339 @@ class _TenantInventoryScreenState extends State<TenantInventoryScreen>
           ),
         ],
       ]));
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  IMAGE CAROUSEL
+//  • 0 images → nothing rendered
+//  • 1 image  → full-width hero (no arrows, no dots)
+//  • 2-3 imgs → PageView with prev/next arrows + dot indicators
+// ══════════════════════════════════════════════════════════════════════
+class _NetworkImageCarousel extends StatefulWidget {
+  final List<String> imageUrls;
+  final bool isDark;
+
+  const _NetworkImageCarousel({
+    required this.imageUrls,
+    required this.isDark,
+  });
+
+  @override
+  State<_NetworkImageCarousel> createState() =>
+      _NetworkImageCarouselState();
+}
+
+class _NetworkImageCarouselState
+    extends State<_NetworkImageCarousel> {
+  final PageController _pageCtrl = PageController();
+  int _current = 0;
+
+  @override
+  void dispose() {
+    _pageCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final urls = widget.imageUrls;
+    if (urls.isEmpty) return const SizedBox.shrink();
+
+    // ── Single image: full-width hero ──────────────────────────────
+    if (urls.length == 1) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Image.network(
+          urls.first,
+          height: 200,
+          width: double.infinity,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _placeholder(200),
+        ),
+      );
+    }
+
+    // ── 2-3 images: carousel ───────────────────────────────────────
+    return Column(
+      children: [
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            // PageView
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: SizedBox(
+                height: 200,
+                child: PageView.builder(
+                  controller: _pageCtrl,
+                  itemCount: urls.length,
+                  onPageChanged: (i) =>
+                      setState(() => _current = i),
+                  itemBuilder: (_, i) => Image.network(
+                    urls[i],
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _placeholder(200),
+                  ),
+                ),
+              ),
+            ),
+
+            // Left arrow
+            if (_current > 0)
+              Positioned(
+                left: 8,
+                child: _arrowBtn(
+                  icon: Icons.chevron_left_rounded,
+                  onTap: () => _pageCtrl.previousPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  ),
+                ),
+              ),
+
+            // Right arrow
+            if (_current < urls.length - 1)
+              Positioned(
+                right: 8,
+                child: _arrowBtn(
+                  icon: Icons.chevron_right_rounded,
+                  onTap: () => _pageCtrl.nextPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  ),
+                ),
+              ),
+
+            // Image counter badge (top-right)
+            Positioned(
+              top: 10,
+              right: 10,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.55),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${_current + 1} / ${urls.length}',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Poppins'),
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        // Dot indicators
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(urls.length, (i) {
+            final active = i == _current;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              width: active ? 22 : 8,
+              height: 8,
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                color: active
+                    ? AppTheme.tenantPrimary
+                    : (widget.isDark
+                        ? Colors.white30
+                        : Colors.black26),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  Widget _arrowBtn(
+          {required IconData icon, required VoidCallback onTap}) =>
+      GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.45),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: Colors.white, size: 20),
+        ),
+      );
+
+  Widget _placeholder(double height) => Container(
+        height: height,
+        color: AppTheme.tenantPrimary.withOpacity(0.1),
+        child: const Center(
+          child: Icon(Icons.image_not_supported_outlined,
+              color: AppTheme.tenantPrimary, size: 32),
+        ),
+      );
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  MEMORY IMAGE CAROUSEL  (used in edit sheet preview)
+// ══════════════════════════════════════════════════════════════════════
+class _MemoryImageCarousel extends StatefulWidget {
+  final List<Uint8List> imageBytes;
+  final bool isDark;
+  final VoidCallback onTap; // tap anywhere to re-pick
+
+  const _MemoryImageCarousel({
+    required this.imageBytes,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  State<_MemoryImageCarousel> createState() =>
+      _MemoryImageCarouselState();
+}
+
+class _MemoryImageCarouselState
+    extends State<_MemoryImageCarousel> {
+  final PageController _pageCtrl = PageController();
+  int _current = 0;
+
+  @override
+  void dispose() {
+    _pageCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bytes = widget.imageBytes;
+    if (bytes.isEmpty) return const SizedBox.shrink();
+
+    if (bytes.length == 1) {
+      return GestureDetector(
+        onTap: widget.onTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.memory(
+            bytes.first,
+            height: 160,
+            width: double.infinity,
+            fit: BoxFit.cover,
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                height: 160,
+                child: PageView.builder(
+                  controller: _pageCtrl,
+                  itemCount: bytes.length,
+                  onPageChanged: (i) =>
+                      setState(() => _current = i),
+                  itemBuilder: (_, i) => GestureDetector(
+                    onTap: widget.onTap,
+                    child: Image.memory(bytes[i],
+                        fit: BoxFit.cover),
+                  ),
+                ),
+              ),
+            ),
+            if (_current > 0)
+              Positioned(
+                left: 6,
+                child: _arrow(
+                  Icons.chevron_left_rounded,
+                  () => _pageCtrl.previousPage(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeInOut,
+                  ),
+                ),
+              ),
+            if (_current < bytes.length - 1)
+              Positioned(
+                right: 6,
+                child: _arrow(
+                  Icons.chevron_right_rounded,
+                  () => _pageCtrl.nextPage(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeInOut,
+                  ),
+                ),
+              ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_current + 1}/${bytes.length}',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Poppins'),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(bytes.length, (i) {
+            final active = i == _current;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              width: active ? 18 : 7,
+              height: 7,
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                color: active
+                    ? AppTheme.tenantPrimary
+                    : (widget.isDark
+                        ? Colors.white30
+                        : Colors.black26),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  Widget _arrow(IconData icon, VoidCallback onTap) =>
+      GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.45),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: Colors.white, size: 18),
+        ),
+      );
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -606,7 +965,8 @@ class _AssetListCardState extends State<_AssetListCard>
       builder: (_, child) => Opacity(
           opacity: _ctrl.value,
           child: Transform.translate(
-              offset: Offset(0, 20 * (1 - _ctrl.value)), child: child)),
+              offset: Offset(0, 20 * (1 - _ctrl.value)),
+              child: child)),
       child: GestureDetector(
         onTap: widget.onView,
         child: Container(
@@ -618,21 +978,22 @@ class _AssetListCardState extends State<_AssetListCard>
             border: Border.all(color: widget.div),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(widget.isDark ? 0.25 : 0.05),
+                color: Colors.black
+                    .withOpacity(widget.isDark ? 0.25 : 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               )
             ],
           ),
           child: Row(children: [
+            // Thumbnail (first image or icon)
             Container(
-              width: 52, height: 52,
+              width: 52,
+              height: 52,
               decoration: BoxDecoration(
                   color: AppTheme.getStatusColor(a.status)
                       .withOpacity(widget.isDark ? 0.2 : 0.1),
                   borderRadius: BorderRadius.circular(14)),
-              // child: Icon(Icons.inventory_2_rounded,
-              //     color: AppTheme.getStatusColor(a.status), size: 26)),
               child: a.imageUrls.isNotEmpty
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(14),
@@ -641,9 +1002,13 @@ class _AssetListCardState extends State<_AssetListCard>
                         width: 52,
                         height: 52,
                         fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(
+                            Icons.inventory_2_rounded,
+                            color: AppTheme.getStatusColor(a.status)),
                       ),
                     )
-                  : Icon(Icons.inventory_2_rounded),
+                  : Icon(Icons.inventory_2_rounded,
+                      color: AppTheme.getStatusColor(a.status)),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -663,7 +1028,8 @@ class _AssetListCardState extends State<_AssetListCard>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
-                          color: cat.withOpacity(widget.isDark ? 0.2 : 0.1),
+                          color: cat
+                              .withOpacity(widget.isDark ? 0.2 : 0.1),
                           borderRadius: BorderRadius.circular(6)),
                       child: Text(a.category,
                           style: TextStyle(
@@ -682,19 +1048,47 @@ class _AssetListCardState extends State<_AssetListCard>
                             fontWeight: FontWeight.w700,
                             color: AppTheme.tenantPrimary)),
                     const SizedBox(width: 12),
-                    Icon(Icons.layers_outlined, size: 12, color: widget.txtH),
+                    Icon(Icons.layers_outlined,
+                        size: 12, color: widget.txtH),
                     const SizedBox(width: 3),
                     Text('Qty: ${a.quantityAvailable}',
                         style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: 12,
                             color: widget.txtS)),
+                    // Show image count badge if multiple images
+                    if (a.imageUrls.length > 1) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: AppTheme.tenantPrimary
+                              .withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.photo_library_outlined,
+                                  size: 10,
+                                  color: AppTheme.tenantPrimary),
+                              const SizedBox(width: 2),
+                              Text('${a.imageUrls.length}',
+                                  style: const TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.tenantPrimary)),
+                            ]),
+                      ),
+                    ],
                   ]),
                 ])),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
               Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                       color: AppTheme.getStatusColor(a.status)
                           .withOpacity(widget.isDark ? 0.2 : 0.12),
@@ -704,11 +1098,12 @@ class _AssetListCardState extends State<_AssetListCard>
                           fontFamily: 'Poppins',
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.getStatusColor(a.status)))),
+                          color:
+                              AppTheme.getStatusColor(a.status)))),
               const SizedBox(height: 8),
               PopupMenuButton<String>(
-                icon:
-                    Icon(Icons.more_vert_rounded, size: 18, color: widget.txtH),
+                icon: Icon(Icons.more_vert_rounded,
+                    size: 18, color: widget.txtH),
                 color: widget.cardBg,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
@@ -718,7 +1113,8 @@ class _AssetListCardState extends State<_AssetListCard>
                   if (v == 'delete') widget.onDelete();
                 },
                 itemBuilder: (_) => [
-                  _mi('view', Icons.visibility_outlined, 'View', widget.txtP),
+                  _mi('view', Icons.visibility_outlined, 'View',
+                      widget.txtP),
                   _mi('edit', Icons.edit_outlined, 'Edit',
                       AppTheme.tenantPrimary),
                   const PopupMenuDivider(),
@@ -734,7 +1130,8 @@ class _AssetListCardState extends State<_AssetListCard>
     );
   }
 
-  PopupMenuItem<String> _mi(String v, IconData icon, String label, Color c,
+  PopupMenuItem<String> _mi(
+          String v, IconData icon, String label, Color c,
           {Color? color}) =>
       PopupMenuItem(
           value: v,
@@ -743,7 +1140,9 @@ class _AssetListCardState extends State<_AssetListCard>
             const SizedBox(width: 8),
             Text(label,
                 style: TextStyle(
-                    fontFamily: 'Poppins', fontSize: 13, color: color ?? c)),
+                    fontFamily: 'Poppins',
+                    fontSize: 13,
+                    color: color ?? c)),
           ]));
 }
 
@@ -799,8 +1198,8 @@ class _AssetGridCardState extends State<_AssetGridCard>
       animation: _ctrl,
       builder: (_, child) => Opacity(
           opacity: _ctrl.value,
-          child:
-              Transform.scale(scale: 0.85 + 0.15 * _ctrl.value, child: child)),
+          child: Transform.scale(
+              scale: 0.85 + 0.15 * _ctrl.value, child: child)),
       child: GestureDetector(
         onTap: widget.onView,
         onLongPress: widget.onDelete,
@@ -810,82 +1209,110 @@ class _AssetGridCardState extends State<_AssetGridCard>
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(widget.isDark ? 0.25 : 0.06),
+                color: Colors.black
+                    .withOpacity(widget.isDark ? 0.25 : 0.06),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               )
             ],
           ),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(
-                height: 6,
-                decoration: BoxDecoration(
-                    color: AppTheme.getStatusColor(a.status),
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(16)))),
-            Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                            color: AppTheme.getStatusColor(a.status)
-                                .withOpacity(widget.isDark ? 0.2 : 0.1),
-                            borderRadius: BorderRadius.circular(12)),
-                        // child: Icon(Icons.inventory_2_rounded,
-                        //     color: AppTheme.getStatusColor(a.status),
-                        //     size: 24)
-                        child: a.imageUrls.isNotEmpty
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.network(
-                                  a.imageUrls.first,
-                                  width: 44,
-                                  height: 44,
-                                  fit: BoxFit.cover,
-                                ),
-                              )
-                            : Icon(Icons.inventory_2_rounded,
-                                color: AppTheme.getStatusColor(a.status),
-                                size: 24),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(a.name,
-                          style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: widget.txtP),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 4),
-                      Text(a.category,
-                          style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 10,
-                              color: widget.txtS)),
-                      const SizedBox(height: 8),
-                      Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('₹${a.cost.toStringAsFixed(0)}',
-                                style: const TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppTheme.tenantPrimary)),
-                            Text('×${a.quantityAvailable}',
-                                style: TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 12,
-                                    color: widget.txtS)),
-                          ]),
-                    ])),
-          ]),
+          child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Status accent bar
+                Container(
+                    height: 6,
+                    decoration: BoxDecoration(
+                        color: AppTheme.getStatusColor(a.status),
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(16)))),
+                Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Image or icon thumbnail
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                                color: AppTheme.getStatusColor(
+                                        a.status)
+                                    .withOpacity(
+                                        widget.isDark ? 0.2 : 0.1),
+                                borderRadius:
+                                    BorderRadius.circular(12)),
+                            child: a.imageUrls.isNotEmpty
+                                ? ClipRRect(
+                                    borderRadius:
+                                        BorderRadius.circular(12),
+                                    child: Image.network(
+                                      a.imageUrls.first,
+                                      width: 44,
+                                      height: 44,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) =>
+                                          Icon(
+                                              Icons
+                                                  .inventory_2_rounded,
+                                              color: AppTheme
+                                                  .getStatusColor(
+                                                      a.status),
+                                              size: 24),
+                                    ),
+                                  )
+                                : Icon(Icons.inventory_2_rounded,
+                                    color: AppTheme.getStatusColor(
+                                        a.status),
+                                    size: 24),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(a.name,
+                              style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: widget.txtP),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis),
+                          const SizedBox(height: 4),
+                          Text(a.category,
+                              style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 10,
+                                  color: widget.txtS)),
+                          const SizedBox(height: 8),
+                          Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                    '₹${a.cost.toStringAsFixed(0)}',
+                                    style: const TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color:
+                                            AppTheme.tenantPrimary)),
+                                Row(children: [
+                                  Text('×${a.quantityAvailable}',
+                                      style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: 12,
+                                          color: widget.txtS)),
+                                  if (a.imageUrls.length > 1) ...[
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                        Icons
+                                            .photo_library_outlined,
+                                        size: 12,
+                                        color: AppTheme.tenantPrimary
+                                            .withOpacity(0.7)),
+                                  ],
+                                ]),
+                              ]),
+                        ])),
+              ]),
         ),
       ),
     );
@@ -893,7 +1320,7 @@ class _AssetGridCardState extends State<_AssetGridCard>
 }
 
 // ══════════════════════════════════════════════════════════════════════
-//  ASSET DETAIL SHEET
+//  ASSET DETAIL SHEET  (with _NetworkImageCarousel)
 // ══════════════════════════════════════════════════════════════════════
 class _AssetDetailSheet extends StatelessWidget {
   final AssetModel asset;
@@ -917,161 +1344,170 @@ class _AssetDetailSheet extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
           color: cardBg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24))),
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(24))),
       padding: EdgeInsets.fromLTRB(
-          20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 24),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Center(
-            child: Container(
-                width: 40,
-                height: 4,
+          20,
+          20,
+          20,
+          MediaQuery.of(context).viewInsets.bottom + 24),
+      child: SingleChildScrollView(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          // Drag handle
+          Center(
+              child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                      color: isDark ? Colors.white24 : Colors.black12,
+                      borderRadius: BorderRadius.circular(2)))),
+          const SizedBox(height: 18),
+
+          // Title row
+          Row(children: [
+            Container(
+                width: 50,
+                height: 50,
                 decoration: BoxDecoration(
-                    color: isDark ? Colors.white24 : Colors.black12,
-                    borderRadius: BorderRadius.circular(2)))),
-        const SizedBox(height: 18),
-        Row(children: [
-          Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                  color: AppTheme.getStatusColor(a.status)
-                      .withOpacity(isDark ? 0.2 : 0.1),
-                  borderRadius: BorderRadius.circular(14)),
-              child: Icon(Icons.inventory_2_rounded,
-                  color: AppTheme.getStatusColor(a.status), size: 26)),
-          const SizedBox(width: 14),
-          Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                Text(a.name,
+                    color: AppTheme.getStatusColor(a.status)
+                        .withOpacity(isDark ? 0.2 : 0.1),
+                    borderRadius: BorderRadius.circular(14)),
+                child: Icon(Icons.inventory_2_rounded,
+                    color: AppTheme.getStatusColor(a.status),
+                    size: 26)),
+            const SizedBox(width: 14),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text(a.name,
+                      style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: txtP)),
+                  Text(a.category,
+                      style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 12,
+                          color: txtS)),
+                ])),
+          ]),
+
+          // ── IMAGE CAROUSEL ────────────────────────────────────────
+          if (a.imageUrls.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _NetworkImageCarousel(
+              imageUrls: a.imageUrls,
+              isDark: isDark,
+            ),
+          ],
+
+          const SizedBox(height: 20),
+
+          // Info chips
+          Wrap(spacing: 10, runSpacing: 10, children: [
+            _chip(Icons.currency_rupee_rounded,
+                'Price: ${a.cost.toStringAsFixed(0)}',
+                AppTheme.tenantPrimary),
+            _chip(Icons.layers_outlined,
+                'Qty: ${a.quantityAvailable}',
+                AppTheme.tenantPrimary),
+            _chip(
+                a.status.toLowerCase() == 'maintenance'
+                    ? Icons.build_circle_outlined
+                    : a.status.toLowerCase() == 'assigned'
+                        ? Icons.assignment_turned_in_outlined
+                        : Icons.check_circle_outline_rounded,
+                a.status,
+                AppTheme.getStatusColor(a.status)),
+            if (a.location.isNotEmpty)
+              _chip(Icons.place_outlined, a.location,
+                  AppTheme.textSecondary),
+          ]),
+
+          // Description
+          if (a.description.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.05)
+                      : AppTheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: div),
+                ),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Description',
+                          style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: txtS)),
+                      const SizedBox(height: 6),
+                      Text(a.description,
+                          style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 13,
+                              color: txtP,
+                              height: 1.5)),
+                    ])),
+          ],
+
+          const SizedBox(height: 20),
+
+          // Edit button
+          SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: onEdit,
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.tenantPrimary,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 14)),
+                icon: const Icon(Icons.edit_rounded,
+                    color: Colors.white, size: 18),
+                label: const Text('Edit Asset',
                     style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: txtP)),
-                Text(a.category,
-                    style: TextStyle(
-                        fontFamily: 'Poppins', fontSize: 12, color: txtS)),
-              ])),
-          // TextButton.icon(
-          //   onPressed: onEdit,
-          //   icon: const Icon(Icons.edit_outlined,
-          //       color: AppTheme.tenantPrimary, size: 16),
-          //   label: const Text('Edit', style: TextStyle(fontFamily: 'Poppins',
-          //       fontSize: 13, color: AppTheme.tenantPrimary,
-          //       fontWeight: FontWeight.w600)),
-          // ),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white)),
+              )),
         ]),
-        if (a.imageUrls.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 120,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: a.imageUrls.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
-              itemBuilder: (_, i) => ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  a.imageUrls[i],
-                  width: 120,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          ),
-        ],
-        const SizedBox(height: 20),
-        Wrap(spacing: 10, runSpacing: 10, children: [
-          _chip(Icons.currency_rupee_rounded,
-              'Price: ${a.cost.toStringAsFixed(0)}', AppTheme.tenantPrimary),
-          _chip(Icons.layers_outlined, 'Qty: ${a.quantityAvailable}',
-              AppTheme.tenantPrimary),
-          _chip(
-              a.status.toLowerCase() == 'maintenance'
-                  ? Icons.build_circle_outlined
-                  : a.status.toLowerCase() == 'assigned'
-                      ? Icons.assignment_turned_in_outlined
-                      : Icons.check_circle_outline_rounded,
-              a.status,
-              AppTheme.getStatusColor(a.status)),
-          if (a.location.isNotEmpty)
-            _chip(Icons.place_outlined, a.location, AppTheme.textSecondary),
-        ]),
-        if (a.description.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color:
-                    isDark ? Colors.white.withOpacity(0.05) : AppTheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: div),
-              ),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Description',
-                        style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: txtS)),
-                    const SizedBox(height: 6),
-                    Text(a.description,
-                        style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 13,
-                            color: txtP,
-                            height: 1.5)),
-                  ])),
-        ],
-        const SizedBox(height: 20),
-        SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: onEdit,
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.tenantPrimary,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  padding: const EdgeInsets.symmetric(vertical: 14)),
-              icon:
-                  const Icon(Icons.edit_rounded, color: Colors.white, size: 18),
-              label: const Text('Edit Asset',
-                  style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white)),
-            )),
-      ]),
+      ),
     );
   }
 
-  Widget _chip(IconData icon, String label, Color color) => Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-          color: color.withOpacity(isDark ? 0.15 : 0.08),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withOpacity(0.2))),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, color: color, size: 14),
-        const SizedBox(width: 5),
-        Text(label,
-            style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: color)),
-      ]));
+  Widget _chip(IconData icon, String label, Color color) =>
+      Container(
+          padding: const EdgeInsets.symmetric(
+              horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+              color: color.withOpacity(isDark ? 0.15 : 0.08),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: color.withOpacity(0.2))),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(icon, color: color, size: 14),
+            const SizedBox(width: 5),
+            Text(label,
+                style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: color)),
+          ]));
 }
 
 // ══════════════════════════════════════════════════════════════════════
-//  ASSET EDIT SHEET
+//  ASSET EDIT SHEET  (with _MemoryImageCarousel)
 // ══════════════════════════════════════════════════════════════════════
 class _AssetEditSheet extends StatefulWidget {
   final AssetModel asset;
@@ -1111,8 +1547,10 @@ class _AssetEditSheetState extends State<_AssetEditSheet> {
     final a = widget.asset;
     _nameCtrl = TextEditingController(text: a.name);
     _descCtrl = TextEditingController(text: a.description);
-    _qtyCtrl = TextEditingController(text: a.quantityAvailable.toString());
-    _costCtrl = TextEditingController(text: a.cost.toStringAsFixed(0));
+    _qtyCtrl =
+        TextEditingController(text: a.quantityAvailable.toString());
+    _costCtrl =
+        TextEditingController(text: a.cost.toStringAsFixed(0));
     _category = a.category;
     _status = a.status.toLowerCase();
   }
@@ -1126,29 +1564,31 @@ class _AssetEditSheetState extends State<_AssetEditSheet> {
     super.dispose();
   }
 
+  // Max 3 images; uses readAsBytes() for web safety
   Future<void> _pickImages() async {
     final picked = await _picker.pickMultiImage();
     if (picked.isEmpty) return;
-
     final limited = picked.take(3).toList();
-    final bytes = await Future.wait(limited.map((x) => x.readAsBytes()));
-
+    final bytes =
+        await Future.wait(limited.map((x) => x.readAsBytes()));
     setState(() {
       _images = limited;
       _imageBytes = bytes;
     });
   }
 
-  InputDecoration _deco(String hint, {IconData? icon}) => InputDecoration(
+  InputDecoration _deco(String hint, {IconData? icon}) =>
+      InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(fontFamily: 'Poppins', color: widget.txtS),
+        hintStyle: TextStyle(
+            fontFamily: 'Poppins', color: widget.txtS),
         filled: true,
         fillColor: widget.inputBg,
         prefixIcon: icon != null
             ? Icon(icon, size: 18, color: AppTheme.tenantPrimary)
             : null,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14, vertical: 12),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: widget.div)),
@@ -1157,8 +1597,8 @@ class _AssetEditSheetState extends State<_AssetEditSheet> {
             borderSide: BorderSide(color: widget.div)),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide:
-                const BorderSide(color: AppTheme.tenantPrimary, width: 1.5)),
+            borderSide: const BorderSide(
+                color: AppTheme.tenantPrimary, width: 1.5)),
       );
 
   @override
@@ -1166,19 +1606,26 @@ class _AssetEditSheetState extends State<_AssetEditSheet> {
     return Container(
       decoration: BoxDecoration(
           color: widget.cardBg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24))),
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(24))),
       padding: EdgeInsets.fromLTRB(
-          20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 24),
+          20,
+          20,
+          20,
+          MediaQuery.of(context).viewInsets.bottom + 24),
       child: SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
+        // Drag handle
         Center(
             child: Container(
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                    color: widget.isDark ? Colors.white24 : Colors.black12,
+                    color:
+                        widget.isDark ? Colors.white24 : Colors.black12,
                     borderRadius: BorderRadius.circular(2)))),
         const SizedBox(height: 16),
+
         Row(children: [
           Text('Edit Asset',
               style: TextStyle(
@@ -1193,23 +1640,31 @@ class _AssetEditSheetState extends State<_AssetEditSheet> {
           ),
         ]),
         const SizedBox(height: 14),
+
+        // Fields
         TextField(
             controller: _nameCtrl,
-            style: TextStyle(fontFamily: 'Poppins', color: widget.txtP),
-            decoration: _deco('Asset name', icon: Icons.inventory_2_outlined)),
+            style: TextStyle(
+                fontFamily: 'Poppins', color: widget.txtP),
+            decoration:
+                _deco('Asset name', icon: Icons.inventory_2_outlined)),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           value: _category,
           dropdownColor: widget.cardBg,
           style: TextStyle(
-              fontFamily: 'Poppins', fontSize: 14, color: widget.txtP),
-          decoration: _deco('Category', icon: Icons.category_outlined),
+              fontFamily: 'Poppins',
+              fontSize: 14,
+              color: widget.txtP),
+          decoration:
+              _deco('Category', icon: Icons.category_outlined),
           items: AppConstants.assetCategories
               .map((c) => DropdownMenuItem(
                   value: c,
                   child: Text(c,
                       style: TextStyle(
-                          fontFamily: 'Poppins', color: widget.txtP))))
+                          fontFamily: 'Poppins',
+                          color: widget.txtP))))
               .toList(),
           onChanged: (v) => setState(() => _category = v!),
         ),
@@ -1219,67 +1674,124 @@ class _AssetEditSheetState extends State<_AssetEditSheet> {
               child: TextField(
                   controller: _qtyCtrl,
                   keyboardType: TextInputType.number,
-                  style: TextStyle(fontFamily: 'Poppins', color: widget.txtP),
-                  decoration: _deco('Quantity', icon: Icons.layers_outlined))),
+                  style: TextStyle(
+                      fontFamily: 'Poppins', color: widget.txtP),
+                  decoration: _deco('Quantity',
+                      icon: Icons.layers_outlined))),
           const SizedBox(width: 12),
           Expanded(
               child: TextField(
                   controller: _costCtrl,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  style: TextStyle(fontFamily: 'Poppins', color: widget.txtP),
-                  decoration:
-                      _deco('Cost (₹)', icon: Icons.currency_rupee_rounded))),
+                  keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true),
+                  style: TextStyle(
+                      fontFamily: 'Poppins', color: widget.txtP),
+                  decoration: _deco('Cost (₹)',
+                      icon: Icons.currency_rupee_rounded))),
         ]),
         const SizedBox(height: 12),
         TextField(
             controller: _descCtrl,
             maxLines: 3,
-            style: TextStyle(fontFamily: 'Poppins', color: widget.txtP),
+            style: TextStyle(
+                fontFamily: 'Poppins', color: widget.txtP),
             decoration: _deco('Description')),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           value: _status == 'assigned' ? 'available' : _status,
           dropdownColor: widget.cardBg,
           style: TextStyle(
-              fontFamily: 'Poppins', fontSize: 14, color: widget.txtP),
-          decoration: _deco('Status', icon: Icons.build_circle_outlined),
+              fontFamily: 'Poppins',
+              fontSize: 14,
+              color: widget.txtP),
+          decoration: _deco('Status',
+              icon: Icons.build_circle_outlined),
           items: [
             DropdownMenuItem(
               value: 'available',
               child: Text('Available',
-                  style: TextStyle(fontFamily: 'Poppins', color: widget.txtP)),
+                  style: TextStyle(
+                      fontFamily: 'Poppins',
+                      color: widget.txtP)),
             ),
             DropdownMenuItem(
               value: 'maintenance',
               child: Text('Maintenance',
-                  style: TextStyle(fontFamily: 'Poppins', color: widget.txtP)),
+                  style: TextStyle(
+                      fontFamily: 'Poppins',
+                      color: widget.txtP)),
             ),
           ],
-          onChanged: (value) => setState(() => _status = value ?? 'available'),
+          onChanged: (v) =>
+              setState(() => _status = v ?? 'available'),
         ),
         const SizedBox(height: 20),
-        const SizedBox(height: 12),
-        GestureDetector(
-          onTap: _pickImages,
-          child: Container(
-            height: 100,
-            decoration: BoxDecoration(
-              border: Border.all(color: widget.div),
-              borderRadius: BorderRadius.circular(12),
+
+        // ── IMAGE PICKER (carousel preview or placeholder) ─────────
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Text('Images (max 3)',
+                style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: widget.txtP)),
+            const Spacer(),
+            TextButton.icon(
+              onPressed: _imageBytes.length < 3 ? _pickImages : null,
+              icon: Icon(Icons.add_photo_alternate_outlined,
+                  size: 16, color: AppTheme.tenantPrimary),
+              label: Text(
+                _imageBytes.isEmpty ? 'Add Photos' : 'Change',
+                style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 12,
+                    color: AppTheme.tenantPrimary),
+              ),
             ),
-            child: _imageBytes.isEmpty
-                ? const Center(child: Text("Tap to update images"))
-                : ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _imageBytes.length,
-                    itemBuilder: (_, i) => Padding(
-                      padding: const EdgeInsets.all(6),
-                      child: Image.memory(_imageBytes[i], width: 80),
-                    ),
-                  ),
-          ),
-        ),
+          ]),
+          const SizedBox(height: 8),
+          if (_imageBytes.isEmpty)
+            GestureDetector(
+              onTap: _pickImages,
+              child: Container(
+                height: 120,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppTheme.tenantPrimary.withOpacity(0.05),
+                  border: Border.all(
+                      color: AppTheme.tenantPrimary.withOpacity(0.3),
+                      style: BorderStyle.solid),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add_photo_alternate_outlined,
+                          size: 32,
+                          color: AppTheme.tenantPrimary
+                              .withOpacity(0.6)),
+                      const SizedBox(height: 8),
+                      Text('Tap to add images (max 3)',
+                          style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 12,
+                              color: AppTheme.tenantPrimary
+                                  .withOpacity(0.7))),
+                    ]),
+              ),
+            )
+          else
+            _MemoryImageCarousel(
+              imageBytes: _imageBytes,
+              isDark: widget.isDark,
+              onTap: _pickImages,
+            ),
+        ]),
+
+        const SizedBox(height: 20),
+
+        // Save button
         SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -1291,13 +1803,16 @@ class _AssetEditSheetState extends State<_AssetEditSheet> {
                         'name': _nameCtrl.text.trim(),
                         'category': _category,
                         'description': _descCtrl.text.trim(),
-                        'quantity': int.tryParse(_qtyCtrl.text.trim()) ??
+                        'quantity': int.tryParse(
+                                _qtyCtrl.text.trim()) ??
                             widget.asset.quantity,
-                        'value': double.tryParse(_costCtrl.text.trim()) ??
+                        'value': double.tryParse(
+                                _costCtrl.text.trim()) ??
                             widget.asset.cost,
                         'status': _status,
                         'images': _imageBytes,
-                        'imageNames': _images.map((e) => e.name).toList(),
+                        'imageNames':
+                            _images.map((e) => e.name).toList(),
                       });
                       setState(() => _saving = false);
                     },
@@ -1306,7 +1821,8 @@ class _AssetEditSheetState extends State<_AssetEditSheet> {
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
-                  padding: const EdgeInsets.symmetric(vertical: 14)),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 14)),
               child: _saving
                   ? const SizedBox(
                       width: 20,

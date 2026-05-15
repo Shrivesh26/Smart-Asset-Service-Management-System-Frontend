@@ -43,7 +43,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Always derived fresh from current role
   Color get _roleColor => AppTheme.primaryForRole(_selectedRole);
-  Color get _roleDark => AppTheme.darkForRole(_selectedRole);
 
   @override
   void dispose() {
@@ -346,8 +345,15 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildEmailField() => TextFormField(
         controller: _emailCtrl,
         keyboardType: TextInputType.emailAddress,
+        style: const TextStyle(
+          color: AppTheme.textPrimary,
+          fontFamily: 'Poppins',
+        ),
         decoration: InputDecoration(
           hintText: 'Enter your email',
+          hintStyle: TextStyle(
+            color: Colors.grey.shade500,
+          ),
           prefixIcon: Icon(Icons.email_outlined, color: _roleColor),
           filled: true,
           fillColor: Colors.grey.shade100,
@@ -367,14 +373,22 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildPasswordField() => TextFormField(
         controller: _passwordCtrl,
         obscureText: _obscurePassword,
+        style: const TextStyle(
+          color: AppTheme.textPrimary,
+          fontFamily: 'Poppins',
+        ),
         decoration: InputDecoration(
           hintText: 'Enter your password',
+          hintStyle: TextStyle(
+            color: Colors.grey.shade500,
+          ),
           prefixIcon: Icon(Icons.lock_outline_rounded, color: _roleColor),
           suffixIcon: IconButton(
             icon: Icon(
               _obscurePassword
                   ? Icons.visibility_off_outlined
                   : Icons.visibility_outlined,
+              color: AppTheme.textSecondary,
             ),
             onPressed: () =>
                 setState(() => _obscurePassword = !_obscurePassword),
@@ -576,12 +590,12 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildAdminPortalLink() => Center(
         child: GestureDetector(
           onTap: _showAdminLoginSheet,
-          child: Row(
+          child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.admin_panel_settings_outlined,
+              Icon(Icons.admin_panel_settings_outlined,
                   size: 15, color: AppTheme.textHint),
-              const SizedBox(width: 6),
+              SizedBox(width: 6),
               Text(
                 'Platform Admin Portal',
                 style: TextStyle(
@@ -642,7 +656,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
+                          gradient: const LinearGradient(
                             colors: [
                               AppTheme.adminDark,
                               AppTheme.adminPrimary,
@@ -692,12 +706,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: AppTheme.adminLight,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Row(
+                    child: const Row(
                       children: [
-                        const Icon(Icons.security_rounded,
+                        Icon(Icons.security_rounded,
                             color: AppTheme.adminPrimary, size: 18),
-                        const SizedBox(width: 10),
-                        const Expanded(
+                        SizedBox(width: 10),
+                        Expanded(
                           child: Text(
                             'This area is for platform administrators '
                             'who manage tenants and the SaaS system.',
@@ -717,10 +731,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextFormField(
                     controller: adminEmailCtrl,
                     keyboardType: TextInputType.emailAddress,
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontFamily: 'Poppins',
+                    ),
                     decoration: const InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white,
                       labelText: 'Admin Email',
                       prefixIcon: Icon(Icons.email_outlined,
-                          size: 20, color: AppTheme.textSecondary),
+                          size: 20, color: AppTheme.adminPrimary),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(12)),
                         borderSide: BorderSide(
@@ -736,10 +756,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextFormField(
                     controller: adminPasswordCtrl,
                     obscureText: obscure,
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontFamily: 'Poppins',
+                    ),
                     decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white,
                       labelText: 'Admin Password',
                       prefixIcon: const Icon(Icons.lock_outline_rounded,
-                          size: 20, color: AppTheme.textSecondary),
+                          size: 20, color: AppTheme.adminPrimary),
                       focusedBorder: const OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(12)),
                         borderSide: BorderSide(
@@ -769,7 +795,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       height: 52,
                       decoration: BoxDecoration(
                         // ✅ Uses AppTheme admin gradient — no hardcoded indigo
-                        gradient: LinearGradient(
+                        gradient: const LinearGradient(
                           colors: [
                             AppTheme.adminDark,
                             AppTheme.adminPrimary,

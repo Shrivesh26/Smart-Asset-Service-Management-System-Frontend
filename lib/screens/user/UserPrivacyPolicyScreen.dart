@@ -74,7 +74,7 @@ const _sections = [
   _PolicySection(
     'Contact Us',
     Icons.mail_outline_rounded,
-    'If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please reach out to us:\n\nEmail: kashyapsam733@gmail.com\nPhone: +91 98000 00000\nAddress: Atlas Copco, 6th floor, Ashoka Plaza, Viman Nagar, Pune, Maharashtra – 411001, India\n\nWe take all privacy concerns seriously and aim to respond within 5 business days.',
+    'If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please reach out to us:\n\nEmail: support@gmail.com\nPhone: +91 98000 00000\nAddress: Atlas Copco, 6th floor, Ashoka Plaza, Viman Nagar, Pune, Maharashtra – 411001, India\n\nWe take all privacy concerns seriously and aim to respond within 5 business days.',
   ),
 ];
 

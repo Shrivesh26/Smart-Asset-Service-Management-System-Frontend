@@ -96,7 +96,7 @@ class ProviderPrivacyPolicyScreen extends StatelessWidget {
 
                 const SizedBox(height: 12),
                 Text(
-                    'If you have questions about this Privacy Policy, please contact us at kashyapsam733@gmail.com',
+                    'If you have questions about this Privacy Policy, please contact us at support@gmail.com',
                     style: TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 12,

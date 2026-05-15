@@ -115,7 +115,7 @@ class TenantPrivacyPolicyScreen extends StatelessWidget {
       title: 'Contact Us',
       body:
           'If you have any questions about this Privacy Policy or our data practices, please reach out:\n\n'
-          'Email: kashyapsam733@gmail.com'
+          'Email: support@gmail.com'
     ),
   ];
 

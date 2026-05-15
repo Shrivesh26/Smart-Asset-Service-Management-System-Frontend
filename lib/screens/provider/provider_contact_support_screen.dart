@@ -132,9 +132,9 @@ class _ProviderContactSupportScreenState
       _ContactItem(
         icon: Icons.email_outlined,
         label: 'Email Support',
-        value: 'kashyapsam733@gmail.com',
+        value: 'support@gmail.com',
         color: AppTheme.providerPrimary,
-        onTap: () => _copyToClipboard('kashyapsam733@gmail.com', 'Email copied'),
+        onTap: () => _copyToClipboard('support@gmail.com', 'Email copied'),
         actionLabel: 'Copy Email',
       ),
       // _ContactItem(

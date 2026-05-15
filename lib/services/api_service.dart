@@ -264,7 +264,7 @@ class ApiService {
       });
 
       final response = await _dio.post<Map<String, dynamic>>(
-        '$baseUrl/uploads',
+        '$baseUrl/tenants/uploads',
         data: formData,
         options: Options(
           headers: {
@@ -862,5 +862,64 @@ class ApiService {
 
   Future<Map<String, dynamic>> getUserDashboardStats() async {
     return get('/dashboard/user');
+  }
+
+  Future<String> uploadUserImage({
+    required Uint8List imageBytes,
+    required String imageName,
+  }) async {
+    try {
+      final token = await _getToken();
+
+      final formData = FormData.fromMap({
+        'image': MultipartFile.fromBytes(
+          imageBytes,
+          filename: imageName,
+        ),
+      });
+
+      final response = await _dio.post<Map<String, dynamic>>(
+        '$baseUrl/users/uploads',
+        data: formData,
+        options: Options(
+          headers: {
+            'Accept': 'application/json',
+            if (token != null && token.isNotEmpty)
+              'Authorization': 'Bearer $token',
+          },
+          responseType: ResponseType.json,
+          validateStatus: (_) => true,
+        ),
+      );
+
+      final responseData = response.data;
+
+      if (response.statusCode != null &&
+          response.statusCode! >= 200 &&
+          response.statusCode! < 300 &&
+          responseData != null) {
+        return responseData['data']?['imageUrl']?.toString() ?? '';
+      }
+
+      throw ApiException(
+        responseData?['message']?.toString() ??
+            'User image upload failed. Please try again.',
+        statusCode: response.statusCode,
+      );
+    } on DioException catch (e) {
+      final responseData = e.response?.data;
+
+      if (responseData is Map<String, dynamic>) {
+        throw ApiException(
+          responseData['message']?.toString() ??
+              'User image upload failed. Please try again.',
+          statusCode: e.response?.statusCode,
+        );
+      }
+
+      throw const ApiException(
+        'Could not upload user image. Please try again.',
+      );
+    }
   }
 }

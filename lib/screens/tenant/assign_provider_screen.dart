@@ -112,7 +112,7 @@ class _AssignProviderScreenState extends State<AssignProviderScreen>
 
   ScaffoldMessenger.of(context).showSnackBar(
     const SnackBar(
-      content: Text('Provider assigned successfully! 🎉'),
+      content: Text('Provider assigned successfully!'),
       backgroundColor: AppTheme.statusCompleted,
     ),
   );

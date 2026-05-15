@@ -108980,7 +108980,7 @@ q=A.j(20)
 p=t.p
 return A.m(o,A.c4(!1,new A.a1(B.fa,A.G(A.a([s,B.SE,A.m(o,A.G(A.a([A.m(o,o,B.j,o,o,B.Ld,o,7,o,o,o,o,7),B.cp,B.afn],p),B.k,B.f,B.a4,0),B.j,o,o,new A.l(r,o,o,q,o,o,B.l),o,o,o,B.cf,o,o,o)],p),B.k,B.f,B.i,0),o),B.T,!0),B.j,o,o,new A.l(o,o,o,o,o,new A.bu(B.an,B.aj,B.a2,n,o,o),B.l),o,o,o,o,o,o,o)},
 akb(){var s=t.Zk
-s=A.V(new A.a3(A.a([new A.r1(B.dH,"Email Support","kashyapsam733@gmail.com","Copy Email",B.u,new A.aL8(this)),new A.r1(B.e5,"Support Hours","Mon\u2013Sat, 9am\u20136pm IST","",B.u,null)],t.AX),new A.aL9(this),s),s.j("am.E"))
+s=A.V(new A.a3(A.a([new A.r1(B.dH,"Email Support","support@gmail.com","Copy Email",B.u,new A.aL8(this)),new A.r1(B.e5,"Support Hours","Mon\u2013Sat, 9am\u20136pm IST","",B.u,null)],t.AX),new A.aL9(this),s),s.j("am.E"))
 return A.B(s,B.k,B.f,B.i)},
 akl(){var s,r,q,p=this,o=null,n=p.c
 n.toString
@@ -109036,7 +109036,7 @@ return A.aB(s).az("/provider/settings",null)},
 $S:0}
 A.aL8.prototype={
 $0(){var s=null
-A.xQ(new A.pj("kashyapsam733@gmail.com"))
+A.xQ(new A.pj("support@gmail.com"))
 this.a.c.a2(t.J).f.cq(A.cZ(s,s,s,B.u,B.aQ,B.F,s,A.i("Email copied",s,s,s,s,B.bt,s,s,s),s,B.jy,s,s,s,s,s,s,s,new A.ac(A.j(10),B.t),s,s))
 return s},
 $S:0}
@@ -109863,7 +109863,7 @@ p=A.aJ(A.h(51,B.u.h()>>>16&255,B.u.h()>>>8&255,B.u.h()&255),1)
 q=A.a([A.m(o,A.G(A.a([B.xE,B.ad,A.X(A.i("Last updated: January 1, 2025. Please read this policy carefully.",o,o,o,o,A.k(o,o,B.u,o,o,o,o,o,"Poppins",o,o,12,o,o,o,o,1.4,!0,o,o,o,o,o,o,o,o),o,o,o),1)],s),B.k,B.f,B.i,0),B.j,o,o,new A.l(r,o,p,q,o,o,B.l),o,o,o,B.aB,o,o,o),B.b2],s)
 B.d.O(q,new A.a3(B.a_H,new A.apX(this,a,n,m,l,k),t._D))
 q.push(B.X)
-q.push(A.i("If you have questions about this Privacy Policy, please contact us at kashyapsam733@gmail.com",o,o,o,o,A.k(o,o,l,o,o,o,o,o,"Poppins",o,o,12,o,o,o,o,1.6,!0,o,o,o,o,o,o,o,o),o,o,o))
+q.push(A.i("If you have questions about this Privacy Policy, please contact us at support@gmail.com",o,o,o,o,A.k(o,o,l,o,o,o,o,o,"Poppins",o,o,12,o,o,o,o,1.6,!0,o,o,o,o,o,o,o,o),o,o,o))
 q.push(B.d5)
 return A.cf(o,j,A.B(A.a([i,A.X(A.d2(A.B(q,B.y,B.f,B.i),o,B.B,B.ah,o,B.N),1)],s),B.k,B.f,B.i),o,o,o,o)}}
 A.apW.prototype={
@@ -113913,7 +113913,7 @@ q=A.c(q).ax.a===B.b?A.a([B.cV,B.cW],s):A.a([B.bn,B.m],s)
 s=t.p
 return A.m(r,A.c4(!1,new A.a1(B.fa,A.G(A.a([A.bC(r,r,r,B.qk,r,r,new A.aRL(this),r,r,r,r),B.bP,A.X(A.B(A.a([B.af4,B.bb,A.i("We're here to help you succeed.",r,r,r,r,A.k(r,r,A.h(204,B.c.h()>>>16&255,B.c.h()>>>8&255,B.c.h()&255),r,r,r,r,r,r,r,r,12,r,r,r,r,r,!0,r,r,r,r,r,r,r,r),r,r,r)],s),B.y,B.f,B.i),1)],s),B.k,B.f,B.i,0),r),B.T,!0),B.j,r,r,new A.l(r,r,r,r,r,new A.bu(B.bd,B.bw,B.a2,q,r,r),B.l),r,r,r,r,r,r,1/0)},
 akc(){var s=t.q2
-s=A.V(new A.a3(A.a([new A.oD(B.dH,"Email Support","kashyapsam733@gmail.com",new A.aRC(this)),new A.oD(B.wH,"Working Hours","Mon\u2013Sat\n9:00 AM \u2013 6:00 PM",new A.aRD()),new A.oD(B.ie,"Live Chat","In-app chat available\nduring business hours",new A.aRE())],t.No),new A.aRF(this),s),s.j("am.E"))
+s=A.V(new A.a3(A.a([new A.oD(B.dH,"Email Support","support@gmail.com",new A.aRC(this)),new A.oD(B.wH,"Working Hours","Mon\u2013Sat\n9:00 AM \u2013 6:00 PM",new A.aRD()),new A.oD(B.ie,"Live Chat","In-app chat available\nduring business hours",new A.aRE())],t.No),new A.aRF(this),s),s.j("am.E"))
 return A.b5v(1.3,s,3,12,12,B.eF,!0)},
 aBV(){var s,r,q,p=null,o=this.c
 o.toString
@@ -120156,7 +120156,7 @@ h=A.bD(A.m(k,k,B.j,k,k,new A.l(h,k,k,A.j(3),k,k,B.l),k,5,k,k,k,k,44),k,k)
 s=A.X(A.i("Contact Us",k,k,k,k,A.k(k,k,j?B.A:B.w,k,k,k,k,k,k,k,k,18,k,k,B.z,k,k,!0,k,k,k,k,k,k,k,k),k,k,k),1)
 r=t.p
 s=A.G(A.a([s,A.bC(k,k,k,A.a6(B.bN,j?B.v:B.p,k,k,k),k,k,new A.aEs(a),k,k,k,k)],r),B.k,B.f,B.i,0)
-q=l.L_(B.dH,"Email","kashyapsam733@gmail.com")
+q=l.L_(B.dH,"Email","support@gmail.com")
 p=l.L_(B.ev,"Phone","+91 98000 00000")
 o=l.L_(B.wH,"Hours","Mon\u2013Sat, 9am\u20136pm")
 n=A.h(B.h.B(255*(j?0.15:0.07)),B.n.h()>>>16&255,B.n.h()>>>8&255,B.n.h()&255)
@@ -127757,7 +127757,7 @@ B.uE=new A.adf(1,"intersect")
 B.F=new A.xM(1,"hardEdge")
 B.bh=new A.xM(2,"antiAlias")
 B.em=new A.xM(3,"antiAliasWithSaveLayer")
-B.NB=new A.pj("kashyapsam733@gmail.com")
+B.NB=new A.pj("support@gmail.com")
 B.oi=new A.xP(0,"pasteable")
 B.oj=new A.xP(1,"unknown")
 B.a7V=new A.vz(1,"closeButton")
@@ -129071,7 +129071,7 @@ B.al9=new A.j7(B.wP,"Children's Privacy","Our services are not directed to indiv
 B.x3=new A.a2(62582,"MaterialIcons",null,!1)
 B.al5=new A.j7(B.x3,"Changes to This Policy",'We may update this Privacy Policy from time to time. When we do, we will revise the "Last Updated" date at the top of this screen. For material changes, we will notify you via in-app notification or email at least 14 days before the change takes effect.')
 B.Tq=new A.a2(61305,"MaterialIcons",null,!1)
-B.al0=new A.j7(B.Tq,"Contact Us","If you have any questions about this Privacy Policy or our data practices, please reach out:\n\nEmail: kashyapsam733@gmail.com")
+B.al0=new A.j7(B.Tq,"Contact Us","If you have any questions about this Privacy Policy or our data practices, please reach out:\n\nEmail: support@gmail.com")
 B.Ye=s([B.akY,B.al1,B.ali,B.al8,B.al_,B.al4,B.al6,B.ale,B.al9,B.al5,B.al0],A.aU("O<j7>"))
 B.Zd=s([0.41233895,0.35762064,0.18051042],t.n)
 B.YI=s([0.2126,0.7152,0.0722],t.n)
@@ -129179,7 +129179,7 @@ B.akX=new A.fo("Third-Party Services",B.qf,"The Platform integrates with third-p
 B.alb=new A.fo("Children's Privacy",B.wP,"Our Platform is not directed at individuals under the age of 18. We do not knowingly collect personal information from minors.\n\nIf you believe that a minor has provided us with personal information without parental consent, please contact us immediately at privacy@example.com and we will take steps to delete that information.")
 B.ald=new A.fo("Changes to This Policy",B.x3,"We may update this Privacy Policy from time to time to reflect changes in our practices or applicable law. When we make material changes, we will notify you through the app or via email at least 14 days before the changes take effect.\n\nYour continued use of the Platform after the effective date of any changes constitutes your acceptance of the updated policy. We encourage you to review this page periodically.")
 B.Ug=new A.a2(63643,"MaterialIcons",null,!1)
-B.alh=new A.fo("Contact Us",B.Ug,"If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please reach out to us:\n\nEmail: kashyapsam733@gmail.com\nPhone: +91 98000 00000\nAddress: Atlas Copco, 6th floor, Ashoka Plaza, Viman Nagar, Pune, Maharashtra \u2013 411001, India\n\nWe take all privacy concerns seriously and aim to respond within 5 business days.")
+B.alh=new A.fo("Contact Us",B.Ug,"If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please reach out to us:\n\nEmail: support@gmail.com\nPhone: +91 98000 00000\nAddress: Atlas Copco, 6th floor, Ashoka Plaza, Viman Nagar, Pune, Maharashtra \u2013 411001, India\n\nWe take all privacy concerns seriously and aim to respond within 5 business days.")
 B.y6=s([B.al3,B.alc,B.alg,B.al7,B.ala,B.alf,B.al2,B.akZ,B.akX,B.alb,B.ald,B.alh],A.aU("O<fo>"))
 B.Z7=s(["Provider","Asset","Schedule","Confirm"],t.s)
 B.qt=s(["Tools","Equipment","Electrical","Plumbing","HVAC","IT Hardware","Safety Gear","Vehicles","Furniture","Spare Parts","Other"],t.s)
