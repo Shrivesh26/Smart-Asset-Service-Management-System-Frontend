@@ -179,47 +179,13 @@ class ServiceCatalogService extends ChangeNotifier {
     _setError(e.message);
     return false;
   } catch (_) {
+
     _setError('Failed to update service. Please try again.');
     return false;
   } finally {
     _setLoading(false);
   }
 }
-
-  // Future<bool> updateService(
-  //   String serviceId,
-  //   Map<String, dynamic> data,
-  // ) async {
-  //   _setLoading(true);
-  //   try {
-  //     final response = await _api.updateService(serviceId, data);
-  //     final updated = ServiceModel.fromJson(
-  //       response['data'] as Map<String, dynamic>? ?? {},
-  //     );
-
-  //     final idx = _services.indexWhere((s) => s.id == serviceId);
-  //     if (idx != -1) _services[idx] = updated;
-
-  //     final storeIdx = _storeServices.indexWhere((s) => s.id == serviceId);
-  //     if (storeIdx != -1) _storeServices[storeIdx] = updated;
-
-  //     if (_selectedService?.id == serviceId) {
-  //       _selectedService = updated;
-  //     }
-
-  //     _error = null;
-  //     notifyListeners();
-  //     return true;
-  //   } on ApiException catch (e) {
-  //     _setError(e.message);
-  //     return false;
-  //   } catch (_) {
-  //     _setError('Failed to update service. Please try again.');
-  //     return false;
-  //   } finally {
-  //     _setLoading(false);
-  //   }
-  // }
 
   Future<bool> deleteService(String serviceId) async {
     _setLoading(true);
