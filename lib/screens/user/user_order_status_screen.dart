@@ -6,6 +6,7 @@ import '../../models/booking_model.dart';
 import '../../services/booking_service.dart';
 import '../../utils/app_constants.dart';
 import '../../utils/app_theme.dart';
+import '../../widgets/app_media_image.dart';
 
 class UserOrderStatusScreen extends StatefulWidget {
   final String orderId;
@@ -50,17 +51,10 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
     return 0;
   }
 
-  /// Cancel is only valid at step 0 (Requested) or step 1 (Finding Provider).
-  /// Once a provider has been assigned (step ≥ 2), the button is removed.
-  /// Additionally the service itself must allow pre-assignment cancellation.
   bool _canShowCancelButton(BookingModel b) {
-    // Gate 1: booking-level cancellability (not already cancelled/completed)
     if (!b.canUserCancel) return false;
-
-    // Gate 2: must be before provider assignment (steps 0 or 1 only)
     final step = _stepFor(b);
     if (step > 1 || b.hasProvider) return false;
-
     return true;
   }
 
@@ -284,7 +278,6 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       child: Center(
-                        // Constrains content width on large tablets
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
                             maxWidth: _isLargeTablet ? 720 : double.infinity,
@@ -305,7 +298,7 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
     );
   }
 
-  // ── Narrow layout (phone + small tablet) ──────────────────────────────
+  // ── Narrow layout ──────────────────────────────────────────────────────
   Widget _buildNarrowContent(BookingModel b, BookingService svc) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,7 +315,7 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
     );
   }
 
-  // ── Wide layout (large tablet) ─────────────────────────────────────────
+  // ── Wide layout ────────────────────────────────────────────────────────
   Widget _buildWideContent(BookingModel b, BookingService svc) {
     return Column(
       children: [
@@ -379,8 +372,8 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
                     _buildInfoCard('Assigned Provider', [
                       _infoRow('Name', b.assignedProviderName ?? '-'),
                       _infoRow('Phone', b.assignedProviderPhone ?? '-'),
-                      if (b.assignedAssetName != null)
-                        _infoRow('Asset', b.assignedAssetName!),
+                      if (b.assignedAssetsLabel.isNotEmpty)
+                        _assignedAssetsList(b),
                     ]),
                   if (b.shouldShowProviderToUser) const SizedBox(height: 14),
                   _buildCostBreakdownCard(b),
@@ -420,8 +413,8 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
         _buildInfoCard('Assigned Provider', [
           _infoRow('Name', b.assignedProviderName ?? '-'),
           _infoRow('Phone', b.assignedProviderPhone ?? '-'),
-          if (b.assignedAssetName != null)
-            _infoRow('Asset', b.assignedAssetName!),
+          if (b.assignedAssetsLabel.isNotEmpty)
+            _assignedAssetsList(b),
         ]),
         const SizedBox(height: 14),
       ],
@@ -501,28 +494,17 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Container(
-            width: _isTablet ? 62 : 56,
-            height: _isTablet ? 62 : 56,
-            decoration: BoxDecoration(
-              color: isCancelled
-                  ? AppTheme.statusInactive.withOpacity(0.12)
-                  : AppTheme.getStatusBgColor(displayStatus),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Icon(
-              isCancelled
-                  ? Icons.cancel_outlined
-                  : Icons.home_repair_service_outlined,
-              color: isCancelled
-                  ? AppTheme.statusInactive
-                  : AppTheme.getStatusColor(displayStatus),
-              size: _isTablet ? 30 : 28,
-            ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          AppMediaImage(
+            imageUrl: b.serviceImageUrl,
+            fallbackIcon: isCancelled ? Icons.cancel_outlined : Icons.home_repair_service_outlined,
+            accent: isCancelled ? AppTheme.statusInactive : AppTheme.getStatusColor(displayStatus),
+            width: double.infinity,
+            height: _isTablet ? 170 : 150,
+            radius: 18,
           ),
-          const SizedBox(width: 14),
+          const SizedBox(height: 14),
+          Row(children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -541,6 +523,7 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
               ],
             ),
           ),
+          const SizedBox(width: 12),
           Container(
             padding:
                 const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -561,6 +544,7 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
               ),
             ),
           ),
+          ]),
         ],
       ),
     );
@@ -890,6 +874,60 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
     );
   }
 
+  // ── CHANGED: asset list with usage badges ──────────────────────────────
+  Widget _assignedAssetsList(BookingModel b) {
+    if (b.assignedAssets.isEmpty) {
+      return _infoRow('Assets', b.assignedAssetsLabel);
+    }
+
+    return Column(
+      children: b.assignedAssets.map((asset) {
+        final used = asset.confirmedUsed as bool?;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppTheme.userPrimary.withOpacity(_isDark ? 0.12 : 0.06),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.userPrimary.withOpacity(0.12)),
+          ),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+            AppMediaImage(
+              imageUrl: asset.imageUrl,
+              fallbackIcon: Icons.inventory_2_outlined,
+              accent: AppTheme.userPrimary,
+              width: 48,
+              height: 48,
+              radius: 12,
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(asset.displayName,
+                    style: TextStyle(fontWeight: FontWeight.w700, color: _txtP)),
+                const SizedBox(height: 2),
+                Text(asset.assetNumber.isEmpty ? 'Assigned asset' : asset.assetNumber,
+                    style: TextStyle(fontSize: 11, color: _txtS)),
+              ],
+            )),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(_money(asset.price),
+                    style: TextStyle(fontWeight: FontWeight.w800, color: _txtP)),
+                const SizedBox(height: 4),
+                // ── usage badge ──────────────────────────────────────
+                _AssetUsageBadge(used: used),
+              ],
+            ),
+          ]),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _infoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -917,11 +955,6 @@ class _UserOrderStatusScreenState extends State<UserOrderStatusScreen> {
   }
 
   // ── Cancel button ──────────────────────────────────────────────────────
-  // Rules:
-  //   1. Booking must not already be cancelled or completed (canUserCancel)
-  //   2. Step must be < 2 — i.e., "Requested" or "Finding Provider" only.
-  //      Once a provider is assigned (step 2+) the button disappears.
-  //   3. The service must have allowCancellationBeforeAssign == true.
   Widget _buildCancelButton(BookingService svc) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
@@ -1011,4 +1044,50 @@ class _TrackStep {
   final String label;
   final IconData icon;
   final int index;
+}
+
+// ── Shared usage badge ─────────────────────────────────────────────────────
+class _AssetUsageBadge extends StatelessWidget {
+  const _AssetUsageBadge({required this.used});
+  final bool? used;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color;
+    final IconData icon;
+    final String label;
+
+    if (used == true) {
+      color = AppTheme.statusCompleted;
+      icon  = Icons.check_circle_rounded;
+      label = 'Used';
+    } else if (used == false) {
+      color = AppTheme.statusInactive;
+      icon  = Icons.cancel_rounded;
+      label = 'Not Used';
+    } else {
+      color = Colors.grey;
+      icon  = Icons.help_outline_rounded;
+      label = 'Pending';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.35)),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 12, color: color),
+        const SizedBox(width: 4),
+        Text(label,
+            style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: color)),
+      ]),
+    );
+  }
 }

@@ -7,6 +7,7 @@ import '../../services/booking_service.dart';
 import '../../utils/app_constants.dart';
 import '../../utils/app_routes.dart';
 import '../../utils/app_theme.dart';
+import '../../widgets/app_media_image.dart';
 
 class OrderDetailScreen extends StatefulWidget {
   final String orderId;
@@ -168,7 +169,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen>
                 ],
               ),
             ),
-            // Only show Assign button when status is Requested and not cancelled
             if (b != null && (b.isRequested || needsReassign) && !isCancelled)
               ElevatedButton.icon(
                 onPressed: () => ctx.push(
@@ -189,7 +189,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen>
                         fontSize: 12,
                         fontWeight: FontWeight.w700)),
               ),
-            // Show cancelled badge in header
             if (isCancelled)
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -250,11 +249,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen>
             _row('Phone',    b.assignedProviderPhone ?? '—'),
           ]),
         ],
-        if (b.assignedAssetName != null) ...[
+        if (b.assignedAssetsLabel.isNotEmpty) ...[
           const SizedBox(height: 14),
           _section('Asset', Icons.inventory_2_outlined, [
-            _row('Asset', b.assignedAssetName!),
-            _row('Estimated Cost', _money(b.assignedAssetPrice)),
+            _assignedAssetsList(b),
           ]),
         ],
         const SizedBox(height: 14),
@@ -304,11 +302,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen>
               _row('Phone',    b.assignedProviderPhone ?? '—'),
             ]),
           ],
-          if (b.assignedAssetName != null) ...[
+          if (b.assignedAssetsLabel.isNotEmpty) ...[
             const SizedBox(height: 14),
             _section('Asset', Icons.inventory_2_outlined, [
-              _row('Asset', b.assignedAssetName!),
-              _row('Estimated Cost', _money(b.assignedAssetPrice)),
+              _assignedAssetsList(b),
             ]),
           ],
           const SizedBox(height: 14),
@@ -336,24 +333,19 @@ class _OrderDetailScreenState extends State<OrderDetailScreen>
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: sc.withOpacity(0.3)),
       ),
-      child: Row(children: [
-        Container(
-          width: 48, height: 48,
-          decoration: BoxDecoration(
-            color: sc.withOpacity(_isDark ? 0.2 : 0.12),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Icon(
-            isCancelled
-                ? Icons.cancel_outlined
-                : Icons.receipt_long_rounded,
-            color: sc,
-            size: 26,
-          ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        AppMediaImage(
+          imageUrl: b.serviceImageUrl,
+          fallbackIcon: isCancelled ? Icons.cancel_outlined : Icons.receipt_long_rounded,
+          accent: sc,
+          width: double.infinity,
+          height: 150,
+          radius: 14,
         ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const SizedBox(height: 14),
+        Row(children: [
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(b.serviceName,
                 style: TextStyle(
                     fontFamily: 'Poppins',
@@ -374,8 +366,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen>
                       fontWeight: FontWeight.w600,
                       color: sc)),
             ]),
-          ]),
-        ),
+            ]),
+          ),
+        ]),
       ]),
     );
   }
@@ -582,7 +575,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen>
                     fontFamily: 'Poppins',
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                color: Colors.white)),
+                    color: Colors.white)),
           ),
         ),
         if (b.canTenantCancel) ...[
@@ -764,6 +757,60 @@ class _OrderDetailScreenState extends State<OrderDetailScreen>
     );
   }
 
+  // ── CHANGED: asset list with usage badges ──────────────────────────────
+  Widget _assignedAssetsList(BookingModel b) {
+    if (b.assignedAssets.isEmpty) {
+      return _row('Assets', b.assignedAssetsLabel);
+    }
+
+    return Column(
+      children: b.assignedAssets.map((asset) {
+        final used = asset.confirmedUsed as bool?;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppTheme.tenantPrimary.withOpacity(_isDark ? 0.12 : 0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.tenantPrimary.withOpacity(0.12)),
+          ),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+            AppMediaImage(
+              imageUrl: asset.imageUrl,
+              fallbackIcon: Icons.inventory_2_outlined,
+              accent: AppTheme.tenantPrimary,
+              width: 50,
+              height: 50,
+              radius: 12,
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(asset.displayName,
+                    style: TextStyle(fontWeight: FontWeight.w700, color: _txtP)),
+                const SizedBox(height: 2),
+                Text(asset.assetNumber.isEmpty ? 'Assigned asset' : asset.assetNumber,
+                    style: TextStyle(fontSize: 11, color: _txtS)),
+              ],
+            )),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(_money(asset.price),
+                    style: TextStyle(fontWeight: FontWeight.w800, color: _txtP)),
+                const SizedBox(height: 4),
+                // ── usage badge ──────────────────────────────────────
+                _AssetUsageBadge(used: used, accentColor: AppTheme.tenantPrimary),
+              ],
+            ),
+          ]),
+        );
+      }).toList(),
+    );
+  }
+
   // ── Helpers ────────────────────────────────────────────────────────────
   Widget _card(String title, IconData icon, Widget body) => Container(
     padding: const EdgeInsets.all(16),
@@ -840,4 +887,51 @@ class _OrderDetailScreenState extends State<OrderDetailScreen>
           color: _cardBg, borderRadius: BorderRadius.circular(16))),
     ]),
   );
+}
+
+// ── Shared usage badge ─────────────────────────────────────────────────────
+class _AssetUsageBadge extends StatelessWidget {
+  const _AssetUsageBadge({required this.used, this.accentColor});
+  final bool? used;
+  final Color? accentColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color;
+    final IconData icon;
+    final String label;
+
+    if (used == true) {
+      color = AppTheme.statusCompleted;
+      icon  = Icons.check_circle_rounded;
+      label = 'Used';
+    } else if (used == false) {
+      color = AppTheme.statusInactive;
+      icon  = Icons.cancel_rounded;
+      label = 'Not Used';
+    } else {
+      color = Colors.grey;
+      icon  = Icons.help_outline_rounded;
+      label = 'Pending';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.35)),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 12, color: color),
+        const SizedBox(width: 4),
+        Text(label,
+            style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: color)),
+      ]),
+    );
+  }
 }

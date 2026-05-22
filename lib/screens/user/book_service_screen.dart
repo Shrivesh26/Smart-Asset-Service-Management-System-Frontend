@@ -9,6 +9,7 @@ import '../../services/service_catalog_service.dart';
 import '../../utils/app_constants.dart';
 import '../../utils/app_routes.dart';
 import '../../utils/app_theme.dart';
+import '../../widgets/app_media_image.dart';
 
 class BookServiceScreen extends StatefulWidget {
   final String serviceId;
@@ -491,6 +492,15 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
         ],
       ),
       child: Column(children: [
+        AppMediaImage(
+          imageUrl: service.imageUrl,
+          fallbackIcon: Icons.home_repair_service_outlined,
+          accent: AppTheme.userPrimary,
+          width: double.infinity,
+          height: 150,
+          radius: 16,
+        ),
+        const SizedBox(height: 14),
         Row(children: [
           Container(
             width: 52,

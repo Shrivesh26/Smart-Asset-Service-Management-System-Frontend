@@ -703,13 +703,13 @@ class ApiService {
   Future<Map<String, dynamic>> assignProviderToBooking(
     String bookingId, {
     required String providerId,
-    required String assetId,
+    List<String> assetIds = const [],
     required String scheduledDate,
     required String scheduledTime,
   }) async {
     return put('/bookings/$bookingId/assign', {
       'provider': providerId,
-      'assigned_asset_id': assetId,
+      if (assetIds.isNotEmpty) 'assigned_asset_id': assetIds,
       'scheduled_date': scheduledDate,
       'scheduled_time': scheduledTime,
     });
@@ -734,11 +734,13 @@ class ApiService {
   Future<Map<String, dynamic>> updateBookingCosts(
     String bookingId, {
     bool? assignedAssetConfirmedUsed,
+    List<Map<String, dynamic>>? assignedAssetUsage,
     List<Map<String, dynamic>>? additionalAssets,
   }) async {
     return put('/bookings/$bookingId/costs', {
       if (assignedAssetConfirmedUsed != null)
         'assignedAssetConfirmedUsed': assignedAssetConfirmedUsed,
+      if (assignedAssetUsage != null) 'assignedAssetUsage': assignedAssetUsage,
       if (additionalAssets != null) 'additionalAssets': additionalAssets,
     });
   }

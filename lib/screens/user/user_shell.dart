@@ -23,11 +23,9 @@ class _UserShellState extends State<UserShell>
 
   // ── Dark-mode helpers ──────────────────────────────────────────────────
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
-  Color get _drawerBg =>
-      _isDark ? const Color(0xFF0F1A14) : Colors.white;
+  Color get _drawerBg => _isDark ? const Color(0xFF0F1A14) : Colors.white;
   Color get _navBg => _isDark ? const Color(0xFF111A15) : Colors.white;
-  Color get _txtP =>
-      _isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
+  Color get _txtP => _isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
   Color get _txtS =>
       _isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary;
   Color get _divider =>
@@ -260,30 +258,44 @@ class _UserShellState extends State<UserShell>
         children: [
           // Avatar
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border:
-                  Border.all(color: Colors.white.withOpacity(0.4), width: 2),
-            ),
-            child: CircleAvatar(
-              radius: 28,
-              backgroundColor: Colors.white.withOpacity(0.2),
-              backgroundImage: hasPhoto ? NetworkImage(url!) : null,
-              onBackgroundImageError: hasPhoto ? (_, __) {} : null,
-              child: !hasPhoto
-                  ? Text(
-                      user?.initials ?? 'U',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    )
-                  : null,
-            ),
-          ),
+              width: double.infinity,
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border:
+                    Border.all(color: Colors.white.withOpacity(0.4), width: 2),
+              ),
+              child: CircleAvatar(
+                radius: 28,
+                backgroundColor: Colors.white.withOpacity(0.2),
+                child: ClipOval(
+                  child: hasPhoto
+                      ? Image.network(
+                          url!,
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.contain, // full image visible
+                          errorBuilder: (_, __, ___) => Center(
+                            child: Text(
+                              user?.initials ?? 'U',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        )
+                      : Text(
+                          user?.initials ?? 'U',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                ),
+              )),
           const SizedBox(height: 10),
           Text(
             user?.fullName ?? 'User',
@@ -309,8 +321,7 @@ class _UserShellState extends State<UserShell>
           ),
           const SizedBox(height: 10),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.18),
               borderRadius: BorderRadius.circular(20),
@@ -392,8 +403,7 @@ class _UserShellState extends State<UserShell>
             color: isActive ? _activeBg : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: isActive
-                ? Border.all(
-                    color: AppTheme.userPrimary.withOpacity(0.25))
+                ? Border.all(color: AppTheme.userPrimary.withOpacity(0.25))
                 : null,
           ),
           child: Row(
@@ -424,8 +434,7 @@ class _UserShellState extends State<UserShell>
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight:
-                          isActive ? FontWeight.w700 : FontWeight.w400,
+                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
                       color: isActive ? AppTheme.userPrimary : _txtP,
                     ),
                   ),
@@ -483,8 +492,7 @@ class _UserShellState extends State<UserShell>
       context: context,
       builder: (d) => AlertDialog(
         backgroundColor: _drawerBg,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Logout',
             style: TextStyle(fontWeight: FontWeight.w700, color: _txtP)),
         content: Text('Are you sure you want to sign out?',
@@ -561,8 +569,7 @@ class _UserShellState extends State<UserShell>
           AnimatedContainer(
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeOut,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
             decoration: BoxDecoration(
               color: isSelected ? _activeBg : Colors.transparent,
               borderRadius: BorderRadius.circular(20),
@@ -578,8 +585,7 @@ class _UserShellState extends State<UserShell>
             duration: const Duration(milliseconds: 220),
             style: TextStyle(
               fontSize: 10,
-              fontWeight:
-                  isSelected ? FontWeight.w700 : FontWeight.w400,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
               color: isSelected ? AppTheme.userPrimary : _txtS,
             ),
             child: Text(label),

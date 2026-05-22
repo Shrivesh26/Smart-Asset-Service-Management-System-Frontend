@@ -445,9 +445,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                 (b.scheduledDate?.isNotEmpty == true)
                     ? '${b.scheduledDate}  ·  ${b.scheduledTime ?? ''}'
                     : '${b.preferredDate}  ·  ${b.preferredTime}'),
-            if (b.assignedAssetName?.isNotEmpty == true) ...[
+            if (b.assignedAssetsLabel.isNotEmpty) ...[
               const SizedBox(height: 4),
-              _infoRow(Icons.inventory_2_outlined, b.assignedAssetName!),
+              _infoRow(Icons.inventory_2_outlined, b.assignedAssetsLabel),
             ],
             const SizedBox(height: 6),
             const Align(alignment: Alignment.centerRight,

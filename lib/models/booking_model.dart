@@ -1,4 +1,78 @@
 import '../utils/app_constants.dart';
+import '../utils/url_utils.dart';
+
+class BookingAssetModel {
+  final String id;
+  final String name;
+  final String assetNumber;
+  final double price;
+  final String? imageUrl;
+  final bool? confirmedUsed;
+
+  const BookingAssetModel({
+    required this.id,
+    required this.name,
+    this.assetNumber = '',
+    this.price = 0,
+    this.imageUrl,
+    this.confirmedUsed,
+  });
+
+  String get displayName => name.isNotEmpty ? name : assetNumber;
+
+  factory BookingAssetModel.fromJson(dynamic value) {
+    if (value is! Map) {
+      return BookingAssetModel(
+        id: value?.toString() ?? '',
+        name: '',
+      );
+    }
+
+    final json = Map<String, dynamic>.from(value);
+    final images = json['images'] as List<dynamic>? ?? const [];
+    String? firstImage;
+    if (images.isNotEmpty) {
+      final first = images.first;
+      if (first is Map) {
+        firstImage = first['url']?.toString() ?? first['imageUrl']?.toString();
+      } else {
+        firstImage = first?.toString();
+      }
+    }
+
+    return BookingAssetModel(
+      id: json['asset']?.toString() ??
+          json['assetId']?.toString() ??
+          json['_id']?.toString() ??
+          json['id']?.toString() ??
+          '',
+      name: json['name']?.toString() ?? '',
+      assetNumber: json['assetNumber']?.toString() ?? '',
+      price: (json['value'] as num?)?.toDouble() ??
+          (json['price'] as num?)?.toDouble() ??
+          0,
+      imageUrl: UrlUtils.normalizeMediaUrl(
+        json['imageUrl']?.toString() ?? firstImage,
+      ),
+      confirmedUsed: json['confirmedUsed'] as bool?,
+    );
+  }
+
+  BookingAssetModel copyWith({
+    double? price,
+    String? imageUrl,
+    bool? confirmedUsed,
+  }) {
+    return BookingAssetModel(
+      id: id,
+      name: name,
+      assetNumber: assetNumber,
+      price: price ?? this.price,
+      imageUrl: imageUrl ?? this.imageUrl,
+      confirmedUsed: confirmedUsed ?? this.confirmedUsed,
+    );
+  }
+}
 
 class CostBreakdownModel {
   final double service;
@@ -42,15 +116,18 @@ class BookingModel {
   final String serviceId;
   final String serviceName;
   final String serviceCategory;
+  final String? serviceImageUrl;
   final String problemDescription;
   final String preferredDate;
   final String preferredTime;
   final String? assignedProviderId;
   final String? assignedProviderName;
   final String? assignedProviderPhone;
+  final String? assignedProviderImageUrl;
   final String? assignedAssetId;
   final String? assignedAssetName;
   final double assignedAssetPrice;
+  final List<BookingAssetModel> assignedAssets;
   final bool? assignedAssetConfirmedUsed;
   final List<Map<String, dynamic>> additionalAssets;
   final CostBreakdownModel costBreakdown;
@@ -82,15 +159,18 @@ class BookingModel {
     required this.serviceId,
     required this.serviceName,
     required this.serviceCategory,
+    this.serviceImageUrl,
     required this.problemDescription,
     required this.preferredDate,
     required this.preferredTime,
     this.assignedProviderId,
     this.assignedProviderName,
     this.assignedProviderPhone,
+    this.assignedProviderImageUrl,
     this.assignedAssetId,
     this.assignedAssetName,
     this.assignedAssetPrice = 0,
+    this.assignedAssets = const [],
     this.assignedAssetConfirmedUsed,
     this.additionalAssets = const [],
     this.costBreakdown = const CostBreakdownModel(),
@@ -225,6 +305,16 @@ class BookingModel {
   bool get hasProvider =>
       assignedProviderId != null && assignedProviderId!.isNotEmpty;
 
+  String get assignedAssetsLabel {
+    if (assignedAssets.isNotEmpty) {
+      return assignedAssets
+          .map((asset) => asset.displayName)
+          .where((name) => name.trim().isNotEmpty)
+          .join(', ');
+    }
+    return assignedAssetName ?? '';
+  }
+
   String get cancellationLabel {
     final role = cancelledByRole ?? 'tenant';
     return 'Cancelled by ${role[0].toUpperCase()}${role.substring(1)}';
@@ -295,6 +385,24 @@ class BookingModel {
     final assignedAssetsRaw = json['assignedAssets'] as List<dynamic>? ??
         json['assigned_assets'] as List<dynamic>? ??
         const [];
+    final assignedAssets = assignedAssetsRaw
+        .map(BookingAssetModel.fromJson)
+        .where((asset) => asset.id.isNotEmpty || asset.displayName.isNotEmpty)
+        .toList();
+    final assetUsageRaw = json['assignedAssetUsage'] as List<dynamic>? ?? const [];
+    final usageById = <String, BookingAssetModel>{
+      for (final usage in assetUsageRaw.map(BookingAssetModel.fromJson))
+        if (usage.id.isNotEmpty) usage.id: usage,
+    };
+    final enrichedAssignedAssets = assignedAssets.map((asset) {
+      final usage = usageById[asset.id];
+      if (usage == null) return asset;
+      return asset.copyWith(
+        price: usage.price > 0 ? usage.price : asset.price,
+        imageUrl: usage.imageUrl ?? asset.imageUrl,
+        confirmedUsed: usage.confirmedUsed,
+      );
+    }).toList();
     final feedback = json['feedback'] is Map
         ? Map<String, dynamic>.from(json['feedback'] as Map)
         : null;
@@ -425,6 +533,12 @@ class BookingModel {
           ?? _asString(json['service_category'])
           ?? _asString(json['serviceCategory'])
           ?? '',
+      serviceImageUrl: UrlUtils.normalizeMediaUrl(
+        _asString(service?['imageUrl']) ??
+            _asString(service?['image']) ??
+            _asString(json['serviceImageUrl']) ??
+            _asString(json['service_image']),
+      ),
       problemDescription: _asString(json['customerNotes'])
           ?? _asString(json['problem_description'])
           ?? _asString(json['problemDescription'])
@@ -445,6 +559,13 @@ class BookingModel {
       assignedProviderPhone: _asString(provider?['phone'])
           ?? _asString(json['assigned_provider_phone'])
           ?? _asString(json['assignedProviderPhone']),
+      assignedProviderImageUrl: UrlUtils.normalizeMediaUrl(
+        _asString((provider?['profile'] is Map)
+                ? (provider?['profile'] as Map)['avatar']
+                : null) ??
+            _asString(json['assignedProviderImageUrl']) ??
+            _asString(json['providerImageUrl']),
+      ),
       assignedAssetId: str(assignedAssetMap?['_id'])
           ?? str(firstAssignedAsset)
           ?? str(json['assigned_asset_id'])
@@ -457,6 +578,7 @@ class BookingModel {
       assignedAssetPrice: (assignedAssetSnapshot?['price'] as num?)?.toDouble()
           ?? (assignedAssetMap?['value'] as num?)?.toDouble()
           ?? 0,
+      assignedAssets: enrichedAssignedAssets,
       assignedAssetConfirmedUsed: assignedAssetSnapshot?['confirmedUsed'] as bool?,
       additionalAssets: additionalAssets,
       costBreakdown: CostBreakdownModel.fromJson(costBreakdownMap),
@@ -528,15 +650,18 @@ class BookingModel {
       serviceId: serviceId,
       serviceName: serviceName,
       serviceCategory: serviceCategory,
+      serviceImageUrl: serviceImageUrl,
       problemDescription: problemDescription,
       preferredDate: preferredDate,
       preferredTime: preferredTime,
       assignedProviderId: assignedProviderId ?? this.assignedProviderId,
       assignedProviderName: assignedProviderName ?? this.assignedProviderName,
       assignedProviderPhone: assignedProviderPhone ?? this.assignedProviderPhone,
+      assignedProviderImageUrl: assignedProviderImageUrl,
       assignedAssetId: assignedAssetId ?? this.assignedAssetId,
       assignedAssetName: assignedAssetName ?? this.assignedAssetName,
       assignedAssetPrice: assignedAssetPrice,
+      assignedAssets: assignedAssets,
       assignedAssetConfirmedUsed: assignedAssetConfirmedUsed,
       additionalAssets: additionalAssets,
       costBreakdown: costBreakdown,

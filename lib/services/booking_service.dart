@@ -132,7 +132,7 @@ class BookingService extends ChangeNotifier {
   Future<bool> assignProviderToBooking(
     String bookingId, {
     required String providerId,
-    required String assetId,
+    List<String> assetIds = const [],
     required String scheduledDate,
     required String scheduledTime,
   }) async {
@@ -141,7 +141,7 @@ class BookingService extends ChangeNotifier {
       final response = await _api.assignProviderToBooking(
         bookingId,
         providerId: providerId,
-        assetId: assetId,
+        assetIds: assetIds,
         scheduledDate: scheduledDate,
         scheduledTime: scheduledTime,
       );
@@ -220,6 +220,7 @@ class BookingService extends ChangeNotifier {
   Future<bool> updateBookingCosts(
     String bookingId, {
     bool? assignedAssetConfirmedUsed,
+    List<Map<String, dynamic>>? assignedAssetUsage,
     List<Map<String, dynamic>>? additionalAssets,
   }) async {
     _setLoading(true);
@@ -227,6 +228,7 @@ class BookingService extends ChangeNotifier {
       final response = await _api.updateBookingCosts(
         bookingId,
         assignedAssetConfirmedUsed: assignedAssetConfirmedUsed,
+        assignedAssetUsage: assignedAssetUsage,
         additionalAssets: additionalAssets,
       );
       final updated = BookingModel.fromJson(

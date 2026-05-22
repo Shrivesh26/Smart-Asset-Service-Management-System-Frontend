@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../services/booking_service.dart';
 import '../../utils/app_constants.dart';
 import '../../utils/app_theme.dart';
+import '../../widgets/app_media_image.dart';
 
 class ProviderTaskDetailScreen extends StatefulWidget {
   final String taskId;
@@ -59,9 +60,12 @@ class _ProviderTaskDetailScreenState extends State<ProviderTaskDetailScreen>
 
   Future<void> _updateStatus(String nextStatus) async {
     final booking = context.read<BookingService>().selectedBooking;
+    final hasUnconfirmedAssets = booking?.assignedAssets.isNotEmpty == true
+        ? booking!.assignedAssets.any((asset) => asset.confirmedUsed == null)
+        : booking?.assignedAssetConfirmedUsed == null &&
+            booking?.assignedAssetsLabel.isNotEmpty == true;
     if (nextStatus == AppConstants.statusCompleted &&
-        booking?.assignedAssetName != null &&
-        booking?.assignedAssetConfirmedUsed == null) {
+        hasUnconfirmedAssets) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(
@@ -177,7 +181,7 @@ class _ProviderTaskDetailScreenState extends State<ProviderTaskDetailScreen>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
             'Job moved to "$nextStatus"'
-            '${nextStatus == 'Completed' ? ' — Great work! 🎉' : ''}',
+            '${nextStatus == 'Completed' ? ' — Great work!' : ''}',
             style: const TextStyle(fontFamily: 'Poppins')),
         backgroundColor: nextStatus == 'Completed'
             ? AppTheme.statusCompleted : AppTheme.providerPrimary,
@@ -253,12 +257,19 @@ class _ProviderTaskDetailScreenState extends State<ProviderTaskDetailScreen>
   }
 
   Future<void> _editCostDetails(dynamic booking) async {
-    bool? used = booking.assignedAssetConfirmedUsed;
+    final usage = {
+      for (final asset in booking.assignedAssets)
+        asset.id: asset.confirmedUsed as bool?
+    };
+    bool? legacyUsed = booking.assignedAssetConfirmedUsed;
     final nameCtrl = TextEditingController();
     final priceCtrl = TextEditingController();
     final extras = booking.additionalAssets
         .map<Map<String, dynamic>>((item) => Map<String, dynamic>.from(item))
         .toList();
+
+    // ── CHANGE: show additional-asset entry for both Accepted and In Progress ──
+    final canAddExtras = booking.isAccepted || booking.isInProgress;
 
     final saved = await showDialog<bool>(
       context: context,
@@ -266,81 +277,252 @@ class _ProviderTaskDetailScreenState extends State<ProviderTaskDetailScreen>
         builder: (ctx, setState) => AlertDialog(
           backgroundColor: _cardBg,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          title: Text('Assets Used',
+          title: Text('Assets & Costs',
               style: TextStyle(fontWeight: FontWeight.w700, color: _txtP)),
           content: SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-              if (booking.assignedAssetName != null) ...[
+              // ── Assigned assets section ──────────────────────────────
+              if (booking.assignedAssetsLabel.isNotEmpty) ...[
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    booking.assignedAssetName,
+                    'Confirm each assigned asset',
                     style: TextStyle(fontWeight: FontWeight.w700, color: _txtP),
                   ),
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    ChoiceChip(
-                      label: const Text('Used'),
-                      selected: used == true,
-                      onSelected: (_) => setState(() => used = true),
+                ...booking.assignedAssets.map((asset) {
+                  final selected = usage[asset.id];
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: _div),
                     ),
-                    const SizedBox(width: 8),
-                    ChoiceChip(
-                      label: const Text('Not Used'),
-                      selected: used == false,
-                      onSelected: (_) => setState(() => used = false),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          AppMediaImage(
+                            imageUrl: asset.imageUrl,
+                            fallbackIcon: Icons.inventory_2_outlined,
+                            accent: AppTheme.providerPrimary,
+                            width: 42,
+                            height: 42,
+                            radius: 10,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(asset.displayName,
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w700, color: _txtP)),
+                              Text(_money(asset.price),
+                                  style: TextStyle(fontSize: 12, color: _txtS)),
+                            ],
+                          )),
+                        ]),
+                        const SizedBox(height: 8),
+                        Row(children: [
+                          Expanded(
+                            child: _UsageChipButton(
+                              label: 'Used',
+                              icon: Icons.check_circle_rounded,
+                              selected: selected == true,
+                              selectedColor: AppTheme.statusCompleted,
+                              onTap: () => setState(() => usage[asset.id] = true),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _UsageChipButton(
+                              label: 'Not Used',
+                              icon: Icons.cancel_rounded,
+                              selected: selected == false,
+                              selectedColor: AppTheme.statusInactive,
+                              onTap: () => setState(() => usage[asset.id] = false),
+                            ),
+                          ),
+                        ]),
+                      ],
                     ),
-                  ],
-                ),
+                  );
+                }),
+                if (booking.assignedAssets.isEmpty)
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(
+                      booking.assignedAssetsLabel,
+                      style: TextStyle(color: _txtS),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(children: [
+                      Expanded(
+                        child: _UsageChipButton(
+                          label: 'Used',
+                          icon: Icons.check_circle_rounded,
+                          selected: legacyUsed == true,
+                          selectedColor: AppTheme.statusCompleted,
+                          onTap: () => setState(() => legacyUsed = true),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _UsageChipButton(
+                          label: 'Not Used',
+                          icon: Icons.cancel_rounded,
+                          selected: legacyUsed == false,
+                          selectedColor: AppTheme.statusInactive,
+                          onTap: () => setState(() => legacyUsed = false),
+                        ),
+                      ),
+                    ]),
+                  ]),
               ],
-              if (booking.isInProgress) ...[
+
+              // ── Additional assets section (Accepted OR In Progress) ───
+              if (canAddExtras) ...[
                 const SizedBox(height: 16),
-                TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Additional asset'),
-                ),
-                TextField(
-                  controller: priceCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Price'),
-                ),
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: () {
-                      final name = nameCtrl.text.trim();
-                      final price = double.tryParse(priceCtrl.text.trim()) ?? 0;
-                      if (name.isEmpty) return;
-                      setState(() {
-                        extras.add({'name': name, 'price': price});
-                        nameCtrl.clear();
-                        priceCtrl.clear();
-                      });
-                    },
-                    icon: const Icon(Icons.add_rounded),
-                    label: const Text('Add'),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.providerPrimary.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: AppTheme.providerPrimary.withOpacity(0.2)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        const Icon(Icons.add_box_outlined,
+                            color: AppTheme.providerPrimary, size: 18),
+                        const SizedBox(width: 8),
+                        Text('Add Extra Assets',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: _txtP,
+                                fontSize: 13)),
+                      ]),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: nameCtrl,
+                        style: TextStyle(color: _txtP, fontSize: 13),
+                        decoration: InputDecoration(
+                          labelText: 'Asset name',
+                          labelStyle: TextStyle(color: _txtS, fontSize: 13),
+                          filled: true,
+                          fillColor: _isDark
+                              ? AppTheme.darkInput
+                              : Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: priceCtrl,
+                        keyboardType: TextInputType.number,
+                        style: TextStyle(color: _txtP, fontSize: 13),
+                        decoration: InputDecoration(
+                          labelText: 'Price (Rs)',
+                          labelStyle: TextStyle(color: _txtS, fontSize: 13),
+                          filled: true,
+                          fillColor: _isDark
+                              ? AppTheme.darkInput
+                              : Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            final name = nameCtrl.text.trim();
+                            final price =
+                                double.tryParse(priceCtrl.text.trim()) ?? 0;
+                            if (name.isEmpty) return;
+                            setState(() {
+                              extras.add({'name': name, 'price': price});
+                              nameCtrl.clear();
+                              priceCtrl.clear();
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.providerPrimary,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                          icon: const Icon(Icons.add_rounded,
+                              color: Colors.white, size: 18),
+                          label: const Text('Add Asset',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                ...extras.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final item = entry.value;
-                  return ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(item['name']?.toString() ?? ''),
-                      subtitle: const Text('Additional asset used'),
-                      trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                        Text(_money((item['price'] as num?)?.toDouble() ?? 0)),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded, size: 18),
-                          onPressed: () => setState(() => extras.removeAt(index)),
+                if (extras.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  ...extras.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final item = entry.value;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.providerPrimary
+                            .withOpacity(_isDark ? 0.14 : 0.06),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color:
+                                AppTheme.providerPrimary.withOpacity(0.2)),
+                      ),
+                      child: Row(children: [
+                        const Icon(Icons.inventory_2_outlined,
+                            color: AppTheme.providerPrimary, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(item['name']?.toString() ?? '',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: _txtP,
+                                  fontSize: 13)),
+                        ),
+                        Text(_money(
+                            (item['price'] as num?)?.toDouble() ?? 0),
+                            style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: _txtP,
+                                fontSize: 13)),
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          onTap: () =>
+                              setState(() => extras.removeAt(index)),
+                          child: const Icon(Icons.close_rounded,
+                              size: 18,
+                              color: AppTheme.statusInactive),
                         ),
                       ]),
                     );
-                }),
+                  }),
+                ],
               ],
             ]),
           ),
@@ -351,7 +533,8 @@ class _ProviderTaskDetailScreenState extends State<ProviderTaskDetailScreen>
             ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              style: FilledButton.styleFrom(backgroundColor: AppTheme.providerPrimary),
+              style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.providerPrimary),
               child: const Text('Save'),
             ),
           ],
@@ -365,8 +548,16 @@ class _ProviderTaskDetailScreenState extends State<ProviderTaskDetailScreen>
 
     final ok = await context.read<BookingService>().updateBookingCosts(
           widget.taskId,
-          assignedAssetConfirmedUsed: used,
-          additionalAssets: booking.isInProgress ? extras : null,
+          assignedAssetConfirmedUsed:
+              booking.assignedAssets.isEmpty ? legacyUsed : null,
+          assignedAssetUsage: booking.assignedAssets
+              .where((asset) => usage[asset.id] != null)
+              .map<Map<String, dynamic>>((asset) => {
+                    'assetId': asset.id,
+                    'confirmedUsed': usage[asset.id],
+                  })
+              .toList(),
+          additionalAssets: canAddExtras ? extras : null,
         );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -476,19 +667,10 @@ class _ProviderTaskDetailScreenState extends State<ProviderTaskDetailScreen>
               _row('Scheduled',
                   '${b.scheduledDate ?? b.preferredDate}  ·  ${b.scheduledTime ?? b.preferredTime}'),
             ]),
-            if (b.assignedAssetName != null) ...[
+            if (b.assignedAssetsLabel.isNotEmpty) ...[
               const SizedBox(height: 14),
-              _infoCard('Assigned Asset', Icons.inventory_2_outlined, [
-                _row('Asset', b.assignedAssetName!),
-                _row('Estimated Cost', _money(b.assignedAssetPrice)),
-                _row(
-                  'Usage',
-                  b.assignedAssetConfirmedUsed == null
-                      ? 'Not confirmed'
-                      : b.assignedAssetConfirmedUsed == true
-                          ? 'Used'
-                          : 'Not used',
-                ),
+              _infoCard('Assigned Assets', Icons.inventory_2_outlined, [
+                _assignedAssetsList(b),
               ]),
             ],
             const SizedBox(height: 14),
@@ -533,19 +715,10 @@ class _ProviderTaskDetailScreenState extends State<ProviderTaskDetailScreen>
                 _row('Issue',    b.problemDescription.isEmpty
                     ? 'No details' : b.problemDescription),
               ]),
-              if (b.assignedAssetName != null) ...[
+              if (b.assignedAssetsLabel.isNotEmpty) ...[
                 const SizedBox(height: 14),
-                _infoCard('Asset', Icons.inventory_2_outlined, [
-                  _row('Asset', b.assignedAssetName!),
-                  _row('Estimated Cost', _money(b.assignedAssetPrice)),
-                  _row(
-                    'Usage',
-                    b.assignedAssetConfirmedUsed == null
-                        ? 'Not confirmed'
-                        : b.assignedAssetConfirmedUsed == true
-                            ? 'Used'
-                            : 'Not used',
-                  ),
+                _infoCard('Assets', Icons.inventory_2_outlined, [
+                  _assignedAssetsList(b),
                 ]),
               ],
               const SizedBox(height: 14),
@@ -570,14 +743,17 @@ class _ProviderTaskDetailScreenState extends State<ProviderTaskDetailScreen>
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: sc.withOpacity(0.3)),
       ),
-      child: Row(children: [
-        Container(width: 46, height: 46,
-          decoration: BoxDecoration(
-              color: sc.withOpacity(_isDark ? 0.2 : 0.12),
-              borderRadius: BorderRadius.circular(13)),
-          child: Icon(Icons.home_repair_service_rounded,
-              color: sc, size: 24)),
-        const SizedBox(width: 14),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        AppMediaImage(
+          imageUrl: b.serviceImageUrl,
+          fallbackIcon: Icons.home_repair_service_rounded,
+          accent: sc,
+          width: double.infinity,
+          height: 150,
+          radius: 13,
+        ),
+        const SizedBox(height: 14),
+        Row(children: [
         Expanded(child: Column(
           crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(b.serviceName, style: TextStyle(fontFamily: 'Poppins',
@@ -592,6 +768,7 @@ class _ProviderTaskDetailScreenState extends State<ProviderTaskDetailScreen>
                 fontSize: 13, fontWeight: FontWeight.w600, color: sc)),
           ]),
         ])),
+        ]),
       ]),
     );
   }
@@ -927,6 +1104,51 @@ class _ProviderTaskDetailScreenState extends State<ProviderTaskDetailScreen>
     );
   }
 
+  // ── CHANGED: asset list with usage badges ─────────────────────────────
+  Widget _assignedAssetsList(b) {
+    if (b.assignedAssets.isEmpty) {
+      return _row('Assets', b.assignedAssetsLabel);
+    }
+
+    return Column(
+      children: b.assignedAssets.map<Widget>((asset) {
+        final used = asset.confirmedUsed as bool?;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppTheme.providerPrimary.withOpacity(_isDark ? 0.14 : 0.06),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.providerPrimary.withOpacity(0.14)),
+          ),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+            AppMediaImage(
+              imageUrl: asset.imageUrl,
+              fallbackIcon: Icons.inventory_2_outlined,
+              accent: AppTheme.providerPrimary,
+              width: 50,
+              height: 50,
+              radius: 12,
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(asset.displayName,
+                    style: TextStyle(fontWeight: FontWeight.w700, color: _txtP)),
+                const SizedBox(height: 4),
+                Text(_money(asset.price),
+                    style: TextStyle(fontSize: 12, color: _txtS)),
+              ],
+            )),
+            // ── usage badge ──────────────────────────────────────────
+            _AssetUsageBadge(used: used),
+          ]),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _row(String label, String value) => Padding(
     padding: const EdgeInsets.only(bottom: 8),
     child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -950,4 +1172,102 @@ class _ProviderTaskDetailScreenState extends State<ProviderTaskDetailScreen>
           borderRadius: BorderRadius.circular(16))),
     ]),
   );
+}
+
+// ── Shared usage badge widget ─────────────────────────────────────────────
+class _AssetUsageBadge extends StatelessWidget {
+  const _AssetUsageBadge({required this.used});
+  final bool? used;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color;
+    final IconData icon;
+    final String label;
+
+    if (used == true) {
+      color = AppTheme.statusCompleted;
+      icon  = Icons.check_circle_rounded;
+      label = 'Used';
+    } else if (used == false) {
+      color = AppTheme.statusInactive;
+      icon  = Icons.cancel_rounded;
+      label = 'Not Used';
+    } else {
+      color = Colors.grey;
+      icon  = Icons.help_outline_rounded;
+      label = 'Pending';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.35)),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 13, color: color),
+        const SizedBox(width: 4),
+        Text(label,
+            style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: color)),
+      ]),
+    );
+  }
+}
+
+// ── Full-width toggle button used inside the cost dialog ─────────────────
+class _UsageChipButton extends StatelessWidget {
+  const _UsageChipButton({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.selectedColor,
+    required this.onTap,
+  });
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final Color selectedColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: selected
+              ? selectedColor.withOpacity(isDark ? 0.25 : 0.12)
+              : (isDark ? AppTheme.darkInput : Colors.grey.shade100),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected
+                ? selectedColor.withOpacity(0.6)
+                : Colors.transparent,
+            width: 1.5,
+          ),
+        ),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(icon,
+              size: 15,
+              color: selected ? selectedColor : Colors.grey),
+          const SizedBox(width: 5),
+          Text(label,
+              style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: selected ? selectedColor : Colors.grey)),
+        ]),
+      ),
+    );
+  }
 }

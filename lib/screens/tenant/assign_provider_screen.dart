@@ -11,6 +11,7 @@ import '../../services/auth_service.dart';
 import '../../services/booking_service.dart';
 import '../../services/provider_service.dart';
 import '../../utils/app_theme.dart';
+import '../../widgets/app_media_image.dart';
 
 class AssignProviderScreen extends StatefulWidget {
   final String orderId;
@@ -25,7 +26,7 @@ class _AssignProviderScreenState extends State<AssignProviderScreen>
 
   // Selections
   UserModel?   _provider;
-  AssetModel?  _asset;
+  final List<AssetModel> _assets = [];
   DateTime?    _date;
   String?      _timeSlot;
 
@@ -102,7 +103,7 @@ class _AssignProviderScreenState extends State<AssignProviderScreen>
     final ok  = await svc.assignProviderToBooking(
       widget.orderId,
       providerId:   _provider!.id,
-      assetId:      _asset?.id ?? '',
+      assetIds:     _assets.map((asset) => asset.id).toList(),
       scheduledDate: '${_date!.year}-${_date!.month.toString().padLeft(2, '0')}-${_date!.day.toString().padLeft(2, '0')}',
       scheduledTime: _timeSlot!,
     );
@@ -371,19 +372,19 @@ class _AssignProviderScreenState extends State<AssignProviderScreen>
         ),
         // Skip option
         GestureDetector(
-          onTap: () => setState(() => _asset = null),
+          onTap: () => setState(_assets.clear),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: _asset == null
+              color: _assets.isEmpty
                   ? AppTheme.tenantPrimary.withOpacity(_isDark ? 0.15 : 0.07)
                   : _cardBg,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                  color: _asset == null ? AppTheme.tenantPrimary : _div,
-                  width: _asset == null ? 1.5 : 1),
+                  color: _assets.isEmpty ? AppTheme.tenantPrimary : _div,
+                  width: _assets.isEmpty ? 1.5 : 1),
             ),
             child: Row(children: [
               Container(width: 40, height: 40,
@@ -396,7 +397,7 @@ class _AssignProviderScreenState extends State<AssignProviderScreen>
               Expanded(child: Text('No asset needed',
                   style: TextStyle(fontFamily: 'Poppins', fontSize: 14,
                       fontWeight: FontWeight.w600, color: _txtP))),
-              if (_asset == null)
+              if (_assets.isEmpty)
                 Container(width: 24, height: 24,
                   decoration: const BoxDecoration(
                       color: AppTheme.tenantPrimary, shape: BoxShape.circle),
@@ -411,9 +412,15 @@ class _AssignProviderScreenState extends State<AssignProviderScreen>
                 style: TextStyle(fontFamily: 'Poppins', fontSize: 13,
                     fontWeight: FontWeight.w600, color: _txtP))),
           ...available.map((a) {
-            final sel = _asset?.id == a.id;
+            final sel = _assets.any((asset) => asset.id == a.id);
             return GestureDetector(
-              onTap: () => setState(() => _asset = a),
+              onTap: () => setState(() {
+                if (sel) {
+                  _assets.removeWhere((asset) => asset.id == a.id);
+                } else {
+                  _assets.add(a);
+                }
+              }),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 margin: const EdgeInsets.only(bottom: 8),
@@ -428,13 +435,14 @@ class _AssignProviderScreenState extends State<AssignProviderScreen>
                       width: sel ? 1.5 : 1),
                 ),
                 child: Row(children: [
-                  Container(width: 40, height: 40,
-                    decoration: BoxDecoration(
-                        color: AppTheme.statusCompleted.withOpacity(
-                            _isDark ? 0.2 : 0.1),
-                        borderRadius: BorderRadius.circular(12)),
-                    child: const Icon(Icons.inventory_2_rounded,
-                        color: AppTheme.statusCompleted, size: 20)),
+                  AppMediaImage(
+                    imageUrl: a.imageUrl,
+                    fallbackIcon: Icons.inventory_2_rounded,
+                    accent: AppTheme.statusCompleted,
+                    width: 42,
+                    height: 42,
+                    radius: 12,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -601,7 +609,9 @@ class _AssignProviderScreenState extends State<AssignProviderScreen>
             ],
             _confirmRow('Provider', _provider?.fullName ?? '—',
                 Icons.engineering_outlined),
-            _confirmRow('Asset', _asset?.name ?? 'No asset',
+            _confirmRow('Assets', _assets.isEmpty
+                ? 'No asset'
+                : _assets.map((asset) => asset.name).join(', '),
                 Icons.inventory_2_outlined),
             _confirmRow('Date',
                 _date != null

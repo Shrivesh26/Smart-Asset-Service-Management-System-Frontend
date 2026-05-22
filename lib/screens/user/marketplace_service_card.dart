@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/service_model.dart';
 import '../../utils/app_theme.dart';
+import '../../widgets/app_media_image.dart';
 
 class MarketplaceServiceCard extends StatelessWidget {
   final ServiceModel service;
@@ -85,17 +86,13 @@ class MarketplaceServiceCard extends StatelessWidget {
                 children: [
                   // ── Icon + Category chip ─────────────────────────────
                   Row(children: [
-                    Container(
+                    AppMediaImage(
+                      imageUrl: service.imageUrl,
+                      fallbackIcon: icon,
+                      accent: accent,
                       width: iconBoxSize,
                       height: iconBoxSize,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: [
-                          accent.withOpacity(isDark ? 0.25 : 0.18),
-                          accent.withOpacity(isDark ? 0.1 : 0.06),
-                        ]),
-                        borderRadius: BorderRadius.circular(iconRadius),
-                      ),
-                      child: Icon(icon, color: accent, size: iconSize),
+                      radius: iconRadius,
                     ),
                     const Spacer(),
                     Container(

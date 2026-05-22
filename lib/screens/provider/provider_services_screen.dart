@@ -6,6 +6,7 @@ import '../../models/booking_model.dart';
 import '../../services/booking_service.dart';
 import '../../utils/app_routes.dart';
 import '../../utils/app_theme.dart';
+import '../../widgets/app_media_image.dart';
 
 class ProviderServicesScreen extends StatefulWidget {
   const ProviderServicesScreen({super.key});
@@ -383,17 +384,14 @@ class _JobCardState extends State<_JobCard>
                           children: [
                             // ── Top row ───────────────────────────────────────────────
                             Row(children: [
-                              Container(
-                                  width: 42,
-                                  height: 42,
-                                  decoration: BoxDecoration(
-                                      color: statusBg
-                                          .withOpacity(widget.isDark ? 0.5 : 1),
-                                      borderRadius: BorderRadius.circular(12)),
-                                  child: Icon(
-                                      Icons.home_repair_service_outlined,
-                                      size: 20,
-                                      color: statusColor)),
+                              AppMediaImage(
+                                imageUrl: b.serviceImageUrl,
+                                fallbackIcon: Icons.home_repair_service_outlined,
+                                accent: statusColor,
+                                width: 42,
+                                height: 42,
+                                radius: 12,
+                              ),
                               const SizedBox(width: 12),
                               Expanded(
                                   child: Column(
@@ -455,10 +453,10 @@ class _JobCardState extends State<_JobCard>
                             _row(Icons.location_on_outlined, displayAddr),
                             const SizedBox(height: 4),
                             _row(Icons.calendar_today_outlined, displayDate),
-                            if (b.assignedAssetName?.isNotEmpty == true) ...[
+                            if (b.assignedAssetsLabel.isNotEmpty) ...[
                               const SizedBox(height: 4),
                               _row(Icons.inventory_2_outlined,
-                                  b.assignedAssetName!),
+                                  b.assignedAssetsLabel),
                             ],
 
                             const SizedBox(height: 8),

@@ -6,6 +6,7 @@ import '../../models/booking_model.dart';
 import '../../services/booking_service.dart';
 import '../../utils/app_routes.dart';
 import '../../utils/app_theme.dart';
+import '../../widgets/app_media_image.dart';
 
 class ProviderCompletedScreen extends StatefulWidget {
   const ProviderCompletedScreen({super.key});
@@ -292,14 +293,16 @@ class _CompletedCardState extends State<_CompletedCard>
             child: Padding(padding: const EdgeInsets.all(14), child: Column(
               crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Container(width: 40, height: 40,
-                  decoration: BoxDecoration(
-                    color: borderColor.withOpacity(widget.isDark ? 0.2 : 0.1),
-                    borderRadius: BorderRadius.circular(11)),
-                  child: Icon(
-                      isCancelled ? Icons.cancel_outlined
-                          : Icons.check_circle_outline_rounded,
-                      size: 20, color: borderColor)),
+                AppMediaImage(
+                  imageUrl: b.serviceImageUrl,
+                  fallbackIcon: isCancelled
+                      ? Icons.cancel_outlined
+                      : Icons.check_circle_outline_rounded,
+                  accent: borderColor,
+                  width: 42,
+                  height: 42,
+                  radius: 11,
+                ),
                 const SizedBox(width: 12),
                 Expanded(child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -330,9 +333,9 @@ class _CompletedCardState extends State<_CompletedCard>
                   (b.scheduledDate?.isNotEmpty == true)
                       ? '${b.scheduledDate}  ·  ${b.scheduledTime ?? ''}'
                       : '${b.preferredDate}  ·  ${b.preferredTime}'),
-              if (b.assignedAssetName != null) ...[
+              if (b.assignedAssetsLabel.isNotEmpty) ...[
                 const SizedBox(height: 4),
-                _row(Icons.inventory_2_outlined, b.assignedAssetName!),
+                _row(Icons.inventory_2_outlined, b.assignedAssetsLabel),
               ],
               if (isCancelled) ...[
                 const SizedBox(height: 10),

@@ -11,6 +11,7 @@ import '../../services/service_catalog_service.dart';
 import '../../utils/app_constants.dart';
 import '../../utils/app_routes.dart';
 import '../../utils/app_theme.dart';
+import '../../widgets/app_media_image.dart';
 
 class TenantServicesScreen extends StatefulWidget {
   const TenantServicesScreen({super.key});
@@ -569,24 +570,13 @@ class _ServiceCardState extends State<_ServiceCard>
             Padding(
               padding: const EdgeInsets.all(14),
               child: Row(children: [
-                Container(
+                AppMediaImage(
+                  imageUrl: widget.service.imageUrl,
+                  fallbackIcon: Icons.home_repair_service_rounded,
+                  accent: cat,
                   width: 54,
                   height: 54,
-                  decoration: BoxDecoration(
-                    color: cat.withOpacity(widget.isDark ? 0.2 : 0.1),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: widget.service.imageUrl != null &&
-                            widget.service.imageUrl!.isNotEmpty
-                        ? Image.network(
-                            widget.service.imageUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _fallbackIcon(cat),
-                          )
-                        : _fallbackIcon(cat),
-                  ),
+                  radius: 14,
                 ),
                 const SizedBox(width: 14),
                 Expanded(

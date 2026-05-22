@@ -9,6 +9,7 @@ import '../../models/booking_model.dart';
 import '../../services/booking_service.dart';
 import '../../utils/app_routes.dart';
 import '../../utils/app_theme.dart';
+import '../../widgets/app_media_image.dart';
 
 class UserOrderHistoryScreen extends StatefulWidget {
   const UserOrderHistoryScreen({super.key});
@@ -184,18 +185,13 @@ class _UserOrderHistoryScreenState extends State<UserOrderHistoryScreen>
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: AppTheme.getStatusBgColor(displayStatus),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                Icons.home_repair_service_outlined,
-                color: AppTheme.getStatusColor(displayStatus),
-                size: 24,
-              ),
+            AppMediaImage(
+              imageUrl: b.serviceImageUrl,
+              fallbackIcon: Icons.home_repair_service_outlined,
+              accent: AppTheme.getStatusColor(displayStatus),
+              width: 54,
+              height: 54,
+              radius: 14,
             ),
             const SizedBox(width: 14),
             Expanded(
